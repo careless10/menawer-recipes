@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* ── Brand tokens — matches eng_menawer cover palette ── */
+@theme {
+  --color-cream: #fdfdf7;
+  --color-ink: #2a2a2a;
+  --color-claude-orange: #d97757;
+  --color-claude-orange-soft: #efb6a0;
+  --color-muted: #8a8a8a;
+  --color-paper: #f5f3ec;
+
+  --font-inter: "Inter", system-ui, -apple-system, sans-serif;
+  --font-cairo: "Cairo", "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* ── Body defaults ── */
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* ── Selection & focus ring ── */
+:focus-visible {
+  outline: 2px solid var(--color-claude-orange);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Recipe page utility classes ── */
+.recipe-prose {
+  max-width: 65ch;
+}
+.recipe-prose h1,
+.recipe-prose h2,
+.recipe-prose h3 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.recipe-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--color-paper);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+/* ── Arabic block (RTL) ── */
+.arabic {
+  font-family: var(--font-cairo);
+  direction: rtl;
+  text-align: right;
+  font-weight: 700;
+}

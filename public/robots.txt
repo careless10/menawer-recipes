@@ -1,0 +1,12 @@
+# Recipes are DM-gated. Don't index the recipe paths.
+# The index page is the only public surface.
+
+User-agent: *
+Allow: /
+Disallow: /bot
+Disallow: /rag
+Disallow: /mcp
+Disallow: /tools
+Disallow: /finetune
+
+# No sitemap — recipe paths must stay discoverable only via the @eng_menawer Instagram DM flow.

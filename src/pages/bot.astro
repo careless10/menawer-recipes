@@ -1,0 +1,225 @@
+---
+import Layout from '../layouts/Layout.astro';
+// Inline the recipe markdown at build-time so we can both display + copy it.
+import recipeRaw from '../content/build-my-chatbot.md?raw';
+
+const recipeLength = recipeRaw.length;
+---
+
+<Layout
+  title="Chatbot for your business — Menawer Recipes"
+  description="Paste this recipe into Claude and ship a working business chatbot in 15 minutes. RAG + Tool calling via OpenRouter. No engineering background required."
+  ogPath="/bot"
+  noindex
+>
+
+  <!-- ── Hero ── -->
+  <section class="mx-auto max-w-4xl px-5 sm:px-8 pt-14 sm:pt-24 pb-12">
+    <div>
+      <span class="inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] font-semibold text-claude-orange">
+        <span class="w-1.5 h-1.5 rounded-full bg-claude-orange"></span>
+        Recipe #1 · From @eng_menawer
+      </span>
+
+      <h1 class="mt-6 text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.04]">
+        Build a chatbot
+        <br class="hidden sm:block" />
+        for <span class="text-claude-orange">your business.</span>
+      </h1>
+
+      <p class="mt-7 text-lg sm:text-xl text-ink/70 leading-relaxed max-w-2xl">
+        Paste this recipe into Claude. Answer 4 short questions. Get a working chatbot
+        tailored to your business in under 15 minutes —
+        <strong class="text-ink">RAG + Tool calling, OpenRouter, no fluff</strong>.
+      </p>
+
+      <!-- CTAs -->
+      <div class="mt-10 flex flex-col sm:flex-row gap-3 sm:items-center">
+        <button
+          id="copy-btn"
+          class="group inline-flex items-center justify-center gap-3 bg-claude-orange text-cream px-7 py-4 rounded-full font-semibold text-base hover:bg-ink transition-colors cursor-pointer"
+          aria-label="Copy the recipe to your clipboard"
+        >
+          <svg class="copy-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <svg class="check-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6L9 17l-5-5"></path>
+          </svg>
+          <span class="copy-label">Copy the recipe</span>
+        </button>
+
+        <a
+          href="https://github.com/careless10/chatbot-recipe"
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-full font-semibold text-base text-ink/70 hover:text-ink border border-ink/15 hover:border-ink/30 transition-colors"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0a12 12 0 0 0-3.79 23.4c.6.11.82-.26.82-.58v-2c-3.34.73-4.04-1.6-4.04-1.6-.54-1.39-1.34-1.76-1.34-1.76-1.1-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.84 2.8 1.3 3.49 1 .1-.78.42-1.3.76-1.6-2.66-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.39 1.24-3.23-.12-.3-.53-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.17.77.84 1.24 1.92 1.24 3.23 0 4.6-2.81 5.62-5.49 5.92.43.37.81 1.1.81 2.22v3.3c0 .32.22.7.83.58A12 12 0 0 0 12 0z" />
+          </svg>
+          View source on GitHub
+        </a>
+      </div>
+
+      <p class="mt-5 text-xs text-ink/40 uppercase tracking-wider">
+        {recipeLength.toLocaleString()} characters · paste into <a href="https://claude.ai" target="_blank" rel="noopener" class="text-ink/55 hover:text-claude-orange underline underline-offset-2">claude.ai</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ── How to use ── -->
+  <section class="mx-auto max-w-4xl px-5 sm:px-8 pb-16">
+    <h2 class="text-sm uppercase tracking-[0.18em] font-semibold text-ink/50 mb-6">
+      How it works
+    </h2>
+
+    <ol class="grid sm:grid-cols-2 gap-4">
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">1</span>
+          <h3 class="font-semibold text-lg">Open Claude</h3>
+        </div>
+        <p class="text-ink/70 text-sm leading-relaxed">
+          <a href="https://claude.ai" target="_blank" rel="noopener" class="text-ink/85 underline underline-offset-2 decoration-claude-orange/40 hover:text-claude-orange">claude.ai</a> (web, easiest)
+          or <a href="https://www.anthropic.com/claude-code" target="_blank" rel="noopener" class="text-ink/85 underline underline-offset-2 decoration-claude-orange/40 hover:text-claude-orange">Claude Code</a> if you've already got it.
+        </p>
+      </li>
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">2</span>
+          <h3 class="font-semibold text-lg">Paste the recipe</h3>
+        </div>
+        <p class="text-ink/70 text-sm leading-relaxed">
+          Hit the orange button above, then paste the entire thing into a new Claude chat.
+        </p>
+      </li>
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">3</span>
+          <h3 class="font-semibold text-lg">Answer 4 quick questions</h3>
+        </div>
+        <p class="text-ink/70 text-sm leading-relaxed">
+          Business name, the boring customer questions, what docs you have, and one action
+          your bot should be able to do.
+        </p>
+      </li>
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">4</span>
+          <h3 class="font-semibold text-lg">Follow the setup</h3>
+        </div>
+        <p class="text-ink/70 text-sm leading-relaxed">
+          Claude writes the full code + step-by-step setup. Running chatbot in ~15 minutes.
+        </p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ── What you get ── -->
+  <section class="mx-auto max-w-4xl px-5 sm:px-8 pb-16">
+    <h2 class="text-sm uppercase tracking-[0.18em] font-semibold text-ink/50 mb-6">
+      What you'll have when it's done
+    </h2>
+
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <h3 class="font-semibold text-lg text-claude-orange">OpenRouter</h3>
+        <p class="mt-2 text-ink/70 text-sm leading-relaxed">
+          One API key, every major model — Claude, GPT, Gemini, Llama. Free credits to start. Never locked in.
+        </p>
+      </div>
+      <div class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <h3 class="font-semibold text-lg text-claude-orange">RAG</h3>
+        <p class="mt-2 text-ink/70 text-sm leading-relaxed">
+          The bot reads <em>your</em> documents — PDFs, Word, markdown, plain text — and answers from them.
+        </p>
+      </div>
+      <div class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <h3 class="font-semibold text-lg text-claude-orange">Tool calling</h3>
+        <p class="mt-2 text-ink/70 text-sm leading-relaxed">
+          The bot can <em>do</em> things — book, transfer, send, look up. Not just talk.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Bottom CTA ── -->
+  <section class="mx-auto max-w-4xl px-5 sm:px-8 pb-20">
+    <div class="bg-ink text-cream rounded-2xl p-8 sm:p-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+      <div>
+        <p class="text-cream/60 text-xs uppercase tracking-[0.18em] font-semibold">Ready?</p>
+        <p class="mt-2 text-2xl sm:text-3xl font-bold tracking-tight">Copy the recipe, paste into Claude, ship.</p>
+      </div>
+      <button
+        id="copy-btn-bottom"
+        class="inline-flex items-center justify-center gap-3 bg-claude-orange text-cream px-7 py-4 rounded-full font-semibold text-base hover:bg-cream hover:text-ink transition-colors cursor-pointer whitespace-nowrap"
+        aria-label="Copy the recipe to your clipboard"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        Copy the recipe
+      </button>
+    </div>
+  </section>
+
+  <!-- ── The recipe content (embedded raw for the copy script) ── -->
+  <script id="recipe-payload" type="text/plain" set:html={recipeRaw}></script>
+
+  <script is:inline>
+    (function () {
+      const payload = document.getElementById('recipe-payload')?.textContent ?? '';
+
+      async function copyRecipe(btn) {
+        try {
+          await navigator.clipboard.writeText(payload);
+          flashSuccess(btn);
+        } catch (err) {
+          // Fallback: textarea + execCommand
+          const ta = document.createElement('textarea');
+          ta.value = payload;
+          ta.style.position = 'fixed';
+          ta.style.left = '-1000px';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          try {
+            document.execCommand('copy');
+            flashSuccess(btn);
+          } catch {
+            alert("Couldn't copy automatically — please select the recipe text manually.");
+          } finally {
+            document.body.removeChild(ta);
+          }
+        }
+      }
+
+      function flashSuccess(btn) {
+        const copyIcon = btn.querySelector('.copy-icon');
+        const checkIcon = btn.querySelector('.check-icon');
+        const label = btn.querySelector('.copy-label') ?? btn.querySelector('span');
+        const originalText = label?.textContent ?? 'Copy the recipe';
+
+        if (copyIcon && checkIcon) {
+          copyIcon.classList.add('hidden');
+          checkIcon.classList.remove('hidden');
+        }
+        if (label) label.textContent = 'Copied — paste into Claude';
+
+        setTimeout(() => {
+          if (copyIcon && checkIcon) {
+            copyIcon.classList.remove('hidden');
+            checkIcon.classList.add('hidden');
+          }
+          if (label) label.textContent = originalText;
+        }, 2200);
+      }
+
+      document.getElementById('copy-btn')?.addEventListener('click', (e) => copyRecipe(e.currentTarget));
+      document.getElementById('copy-btn-bottom')?.addEventListener('click', (e) => copyRecipe(e.currentTarget));
+    })();
+  </script>
+</Layout>

@@ -1,0 +1,96 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogPath?: string;
+  /** Recipe pages opt into noindex so search engines don't surface the gated URLs. */
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description = 'Public build-kits from @eng_menawer — paste them into Claude and ship AI for your business.',
+  ogPath = '/',
+  noindex = false,
+} = Astro.props;
+
+const canonical = `https://recipes.menawer.com${ogPath}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#fdfdf7" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonical} />
+
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Menawer Recipes" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-cream text-ink font-inter antialiased selection:bg-claude-orange/30 selection:text-ink">
+    <a
+      href="#main"
+      class="absolute left-3 top-3 -translate-y-20 focus:translate-y-0 transition-transform bg-ink text-cream px-3 py-2 text-sm rounded-md z-50"
+    >
+      Skip to content
+    </a>
+
+    <header class="border-b border-ink/5">
+      <div class="mx-auto max-w-5xl px-5 sm:px-8 py-5 flex items-center justify-between">
+        <a href="/" class="flex items-baseline gap-2 group">
+          <span class="font-bold text-lg tracking-tight">menawer</span>
+          <span class="text-claude-orange font-bold text-lg tracking-tight">recipes</span>
+        </a>
+        <nav class="flex items-center gap-5 text-sm">
+          <a
+            href="https://instagram.com/eng_menawer"
+            target="_blank"
+            rel="noopener"
+            class="text-ink/70 hover:text-ink transition-colors"
+            >@eng_menawer</a
+          >
+          <a
+            href="https://www.menawer.com"
+            target="_blank"
+            rel="noopener"
+            class="text-ink/70 hover:text-ink transition-colors"
+            >menawer.com</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="border-t border-ink/5 mt-24">
+      <div class="mx-auto max-w-5xl px-5 sm:px-8 py-10 text-sm text-ink/60 flex flex-col sm:flex-row justify-between gap-4">
+        <p>
+          Made by <a href="https://www.menawer.com" class="text-ink/80 hover:text-claude-orange transition-colors font-medium">Menawer</a>.
+          Build kits from the <a href="https://instagram.com/eng_menawer" class="text-ink/80 hover:text-claude-orange transition-colors font-medium">@eng_menawer</a> channel.
+        </p>
+        <p>MIT licensed. Use it, fork it, ship something.</p>
+      </div>
+    </footer>
+  </body>
+</html>

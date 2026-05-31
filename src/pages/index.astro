@@ -1,0 +1,66 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Menawer Recipes — build-kits delivered by DM"
+  description="Build-kits from @eng_menawer's reels — delivered via Instagram DM when you comment the keyword shown in each video."
+  ogPath="/"
+>
+  <!-- Hero -->
+  <section class="mx-auto max-w-3xl px-5 sm:px-8 pt-20 sm:pt-32 pb-20 text-center">
+    <span class="inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] font-semibold text-claude-orange">
+      <span class="w-1.5 h-1.5 rounded-full bg-claude-orange animate-pulse"></span>
+      @eng_menawer
+    </span>
+
+    <h1 class="mt-8 text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.05]">
+      Build kits for
+      <span class="text-claude-orange">builders.</span>
+    </h1>
+
+    <p class="mt-8 text-lg sm:text-xl text-ink/70 leading-relaxed">
+      Each recipe lives at a private link, delivered only to viewers who
+      <strong class="text-ink font-semibold">comment the keyword</strong> shown in the matching reel.
+    </p>
+
+    <p class="mt-4 text-base sm:text-lg text-ink/60 leading-relaxed">
+      Watch the reels. Catch the keyword. Comment it. Check your DMs.
+      That's the whole flow.
+    </p>
+
+    <div class="mt-12">
+      <a
+        href="https://instagram.com/eng_menawer"
+        target="_blank"
+        rel="noopener"
+        class="inline-flex items-center gap-3 bg-ink text-cream px-7 py-4 rounded-full font-semibold text-base hover:bg-claude-orange transition-colors"
+      >
+        Watch the reels
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"></path>
+        </svg>
+      </a>
+    </div>
+
+    <p class="mt-10 text-xs text-ink/40 uppercase tracking-wider">
+      Already have your DM link? Open it on this device — the recipe loads there.
+    </p>
+  </section>
+
+  <!-- Small explainer ribbon -->
+  <section class="mx-auto max-w-3xl px-5 sm:px-8 pb-24">
+    <div class="border-t border-ink/10 pt-8 text-sm text-ink/55 leading-relaxed">
+      <p class="mb-3">
+        <strong class="text-ink/75 font-semibold">What's a recipe?</strong>
+        A single markdown file. Paste it into Claude.
+        Claude asks a couple of questions, then scaffolds a working project for your specific business — 15 minutes from blank screen to running code, no engineering background required.
+      </p>
+      <p>
+        <strong class="text-ink/75 font-semibold">Why DM-gated?</strong>
+        The recipes are free, but the conversation lives on Instagram.
+        Commenting is how you find each one and how the channel grows.
+      </p>
+    </div>
+  </section>
+</Layout>
