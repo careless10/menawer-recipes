@@ -1,8 +1,10 @@
-# Build My Business Chatbot — Claude prompt (v3)
+# Build My Business Chatbot — Claude prompt (v4)
 
 > **You are reading this:** copy the *entire* contents of this file (Ctrl/Cmd+A → Ctrl/Cmd+C) and paste it into Claude. Hit enter. Claude takes it from there.
 
 This recipe is from the [@eng_menawer](https://instagram.com/eng_menawer) channel's chatbot reel. It builds a **Next.js chatbot for your business** with **RAG** (it reads your docs and answers from them) and **tool calling** (it can DO things, not just talk). Local first, optional one-click deploy at the end.
+
+> **What's new in v4:** when you're running inside a chat sandbox (like claude.ai) that can render live previews, Claude now spins up a **working preview of your bot right in the chat first** — so you *see* it talking in seconds — and *then* hands you the full downloadable project. No more "I pasted a file and just got a zip" letdown. Claude is always friendly and upfront that the preview is a quick demo and the download is the real, deployable thing.
 
 ---
 
@@ -17,16 +19,19 @@ Before you do anything else, figure out which environment you're running in. The
 There are three possibilities:
 
 - **A. Claude Code** (the CLI on the user's actual machine) — you have `Bash`, `Write`, `Edit`, `Read`, an interactive question picker, `WebFetch`, and full filesystem access. **You can do everything for the user**, including installing software and running the live server on their machine. Default to this branch if you have these tools.
-- **B. Sandbox harness** (Codex, claude.ai web, or similar — a hosted Python/shell sandbox) — you have a sandboxed filesystem and shell, so **you can build the entire project yourself**, but you can't install software on the user's machine or run the server they'll open in their browser. **You build the full project in the sandbox, have the user download it, then walk them through the install/run commands on their own computer.** Many of these harnesses ALSO give you an interactive question picker — see the capability check in Step 1; don't assume you're text-only.
+- **B. Chat / cowork / sandbox** (claude.ai web chat, claude.ai cowork, Codex, or any hosted harness — anywhere you can write files in a sandbox but can't reach the user's machine). Two flavors based on what your harness can do:
+  - **If you can render an interactive artifact in the chat** (claude.ai web + cowork can; bare Python sandboxes can't) → **the artifact IS the chatbot.** Build it as a single self-contained React/HTML artifact and the user can talk to it right there in the conversation. They get a working chatbot in 60 seconds, no install, no key, no terminal. The downloadable Next.js project is **secondary and optional** — only offered if they explicitly want to deploy it to real customers with their own docs + tools. **Don't lead with the download; the artifact is the product.**
+  - **If you can't render artifacts** (bare sandboxes, Codex) → the **download IS the primary deliverable**. Build the complete Next.js project in your sandbox, zip it, hand it over, then walk the user through the install/run commands on their own computer.
+  - **See Step 6 for the exact build steps in either flavor.**
 - **C. Pure text, no tools** (a bare chat with no sandbox and no picker) — you can only output text. **You walk the user through every step manually**, printing every file in full and waiting for them to confirm each step.
 
-Quick check: read your own tool list. If you see a `Write`/`Edit` tool plus `Bash` and a question picker, you're **A**. If you can execute code / write files in a sandbox but can't reach the user's machine, you're **B** (this is what claude.ai web is today — it has a sandbox AND usually a picker). If you have nothing but text output, you're **C**.
+Quick check: read your own tool list. If you see a `Write`/`Edit` tool plus `Bash` and a question picker, you're **A**. If you can execute code / write files in a sandbox but can't reach the user's machine, you're **B** (this is what claude.ai web is today — it has a sandbox AND usually a picker AND can render live artifact previews). If you have nothing but text output, you're **C**.
 
 **State clearly to the user which environment you're in and what that means for them.** Examples:
 
 > *"I'm running as Claude Code on your Mac, which means I can install things, write files, and run commands for you. You'll just answer a few questions and watch. Ready?"*
 
-> *"I'm running in claude.ai's sandbox. I'll build the whole project for you here and hand it over as a one-click download — then you'll run two short commands on your own computer, and I'll walk you through each. Ready?"*
+> *"I'm running in claude.ai's sandbox. First I'll spin up a LIVE preview of your bot right here in the chat so you can see it working in seconds — then I'll hand you the full project as a one-click download to run on your own computer with your real docs and key. Ready?"*
 
 Then proceed to Step 1.
 
@@ -42,6 +47,8 @@ Then proceed to Step 1.
 Then **conduct the entire rest of the session in the language they pick** — every question, confirmation, status line, and explanation. (Keep code, filenames, commands, and env-var names in English regardless; only the prose around them switches.)
 
 **Interactive questions — detect, don't assume.** Before asking any *multiple-choice* question in this recipe, check your own tool list for an interactive question/picker. It may be named `AskUserQuestion` (Claude Code), `ask_user_input_v0` (claude.ai web), or something else depending on the harness. **If you have one, USE it for every multiple-choice question** — it gives the user clean tappable options instead of making them type. **If you have none, ask the same question in plain text.** *Free-text* questions (business name, example customer questions) are ALWAYS conversational — never force them into buttons, there's nothing to put on the options.
+
+**Rendering check (do this too).** Note whether you can render an interactive preview/artifact inside the chat. claude.ai's Artifacts can render live React/HTML (including a chatbot that talks to Claude with no key). Some bare sandboxes can only produce files. If you're on Branch B and you CAN render, you'll use that in Step 6 to show the user a live demo of their bot. If you can't, you'll skip the preview gracefully.
 
 Throughout this session:
 
@@ -62,7 +69,7 @@ uname -s && uname -m
 - Output starting with `MINGW`/`CYGWIN`/`MSYS` → Windows running a Unix shell (rare). Treat as Linux-ish.
 - If `uname` fails entirely, it's likely Windows PowerShell. Switch your approach.
 
-**Branch B/C:** Ask the user (picker if available, else plain text): macOS / Windows / Linux? You need this because the install commands in Step 4 — and the commands the user will run on their own machine after downloading — differ per OS.
+**Branch B/C:** Ask the user (picker if available, else plain text): macOS / Windows / Linux? You need this because the install commands in Step 4 — and the commands the user will run on their own machine after downloading — differ per OS. (Note: in a sandbox you can detect the *sandbox's* OS, but that's not the user's machine — so you still have to ask which computer they'll run it on.)
 
 Tell the user what you detected so they know you're paying attention.
 
@@ -131,7 +138,7 @@ Don't proceed until the user confirms.
 
 After each: tell the user what you got and what it means in plain words.
 
-**Branch B (sandbox) and C (text):** the user will install these on *their own* machine after the download. Walk them through the same checks — give them links and the exact commands to type in Terminal/PowerShell — and wait for them to confirm each step before moving on. Don't dump everything at once.
+**Branch B (sandbox) and C (text):** the user will install these on *their own* machine after the download. Walk them through the same checks — give them links and the exact commands to type in Terminal/PowerShell — and wait for them to confirm each step before moving on. Don't dump everything at once. (The live preview in Step 6 needs none of this — it runs with zero setup — so the user gets the fun part before touching their terminal.)
 
 ---
 
@@ -149,13 +156,61 @@ OpenRouter is the bot's brain. It's one signup that gives you access to Claude, 
 
 You will use this key in Step 7 to populate `.env.local`. **Never write it into committed code** — only into `.env.local` which is git-ignored. In a sandbox (Branch B), prefer to let the user paste the key into `.env.local` themselves after download rather than placing a real secret into a file you generate.
 
+> **Note:** the **live preview** in Step 6 does NOT need this key — it talks to Claude through the chat's built-in connection. The OpenRouter key is only for the real downloadable project, which can use any model. So you can build and show the preview before the user has even signed up for OpenRouter.
+
 ---
 
-### Step 6 — Scaffold the Next.js project
+### Step 6 — Build the chatbot
+
+**Pick your flavor based on Step 0:**
+
+| Your branch | Primary deliverable | Secondary (optional) |
+|---|---|---|
+| **A. Claude Code** | A real Next.js project on the user's disk | Deploy (Step 9) |
+| **B. Chat/cowork WITH artifact rendering** | **A live artifact in the chat** (6a) — the bot itself | The downloadable Next.js project (6b), only if the user explicitly wants to deploy |
+| **B. Sandbox WITHOUT artifact rendering** | The downloadable Next.js project (6b) | — |
+| **C. Pure text** | Print each file for the user to save by hand (still uses the 6b file list) | — |
+
+---
+
+#### 6a — Branch B with artifacts: build the chatbot AS the artifact (THIS is the product)
+
+**On claude.ai chat or cowork, the artifact isn't a preview — it's the deliverable.** Build it as a single self-contained React (or HTML) artifact the user can talk to right there in the conversation. Don't apologize for it. Don't call it a "demo" or "trailer." It's their chatbot.
+
+Requirements:
+
+- **Use the SAME system prompt** you'll bake from the interview answers — business name, one-sentence description, the two example questions, the chosen language. Set `dir="rtl"` + right-aligned bubbles if Arabic.
+- **Talk to Claude directly through the in-chat connection — NO API key.** claude.ai artifacts can call the Anthropic endpoint and the platform supplies the key. Pattern:
+  ```js
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system: SYSTEM_PROMPT,
+      messages,
+    }),
+  });
+  const reply = (await res.json()).content?.map(b => b.text || "").join("") ?? "";
+  ```
+  **Never put a real API key in an artifact** — artifacts are client-side and visible.
+- **Implement the chosen action (Q4) as a believable in-artifact tool.** When the user asks something that triggers it, show a system line like `✅ Checked inventory — 42 units of <item> available`, then continue. The artifact can't reach their real CRM/Stripe/calendar, but the demonstrated behavior is exactly what the downloadable version will do for real.
+- **Optional: allow the user to paste a small chunk of their business info** (services, prices, FAQs) into a `<textarea>` that gets appended to the system prompt at send time. That's a tiny in-artifact RAG that's usually enough to make the chatbot feel personal for the demo.
+- **Match the channel look:** cream `#fdfdf7` background, Claude orange `#D97757` accent, rounded chat bubbles, mobile-friendly, Cairo font for Arabic.
+- **Frame it honestly in chat — not as a teaser**: *"Here's your chatbot — try it! It speaks for <business> in the language you picked. For real deployment with your full documents and connected systems, ask me for the downloadable project."*
+
+**Stop at 6a** unless the user asks for the deployable project. The artifact is their chatbot. Don't push the download.
+
+---
+
+#### 6b — Build the deployable Next.js project (Branch A always; Branch B on request; Branch C printed-by-hand)
 
 **Branch A (Claude Code):** run these commands via Bash, in order. Stop on failure.
 
-**Branch B (sandbox):** run the same scaffold inside your sandbox so you produce a real, complete project the user can download — then create every file below with your write tool. Don't paste files for the user to copy by hand if you can write them directly.
+**Branch B sandbox-only (no artifact) OR Branch B artifact + user asked for deploy version:** run the scaffold inside your sandbox to produce a real, complete project the user can download — then create every file below with your write tool. Don't paste files for the user to copy by hand if you can write them directly. Strip `node_modules` and the build cache before zipping so the download stays small (the user regenerates with `npm install`).
+
+**Branch C (pure text):** print each file in full as a code block for the user to save by hand in the same paths.
 
 ```bash
 # Pick a folder name from the business name (e.g., "mycafe" or "alabbar-trading")
@@ -170,7 +225,9 @@ npx --yes create-next-app@latest . \
   --import-alias '@/*' --yes
 ```
 
-`create-next-app` will produce a fresh Next.js 15 project. Wait for it to finish.
+`create-next-app` will produce a fresh Next.js project (currently v16+, React 19). Wait for it to finish.
+
+> **Two version gotchas (pin these to save yourself debugging):** the libraries below move fast. As of now, `npm` pulls **openai v6** (where `tool_calls` is a *union* type — narrow with `if (call.type !== "function") break;` before reading `call.function`) and **pdf-parse v2** (which dropped the old default function for a `PDFParse` class — use `const { PDFParse } = await import("pdf-parse"); const text = (await new PDFParse({ data: new Uint8Array(buf) }).getText()).text;`). Consider pinning `openai@^6` and `pdf-parse@^2` and writing the code for those, or pin to the older majors if you prefer the original snippets. Also: the default scaffold's `layout.tsx` imports a Google font at build time — if your build environment has no internet to Google Fonts, swap it for system fonts so the build doesn't fail.
 
 Then create the chatbot files. Each file in full — no placeholders, no `// ...rest of code`:
 
@@ -209,6 +266,8 @@ Example questions you'll get:
 Keep responses short and friendly. Use the same language the customer wrote in.`;
 ```
 
+> **Tip:** reuse this exact `SYSTEM_PROMPT` string in the Step 6a live preview, so the demo and the real bot share one personality.
+
 **File 3: `src/lib/rag.ts`** — read docs, chunk, embed, retrieve
 ```ts
 import fs from "node:fs/promises";
@@ -228,9 +287,11 @@ export async function buildIndex() {
     const full = path.join(DOCS_DIR, file);
     let text = "";
     if (file.endsWith(".pdf")) {
-      const pdfParse = (await import("pdf-parse")).default;
+      const { PDFParse } = await import("pdf-parse"); // pdf-parse v2 API
       const buf = await fs.readFile(full);
-      text = (await pdfParse(buf)).text;
+      const parser = new PDFParse({ data: new Uint8Array(buf) });
+      text = (await parser.getText()).text;
+      await parser.destroy();
     } else {
       text = await fs.readFile(full, "utf8");
     }
@@ -332,8 +393,10 @@ export async function POST(req: NextRequest) {
     tools: TOOLS,
   });
 
+  // openai v6: tool_calls is a union — narrow to the function variant.
   while (resp.choices[0].finish_reason === "tool_calls") {
     const call = resp.choices[0].message.tool_calls![0];
+    if (call.type !== "function") break;
     const result = await handleToolCall(call.function.name, JSON.parse(call.function.arguments));
     messages.push(resp.choices[0].message);
     messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) });
@@ -414,7 +477,7 @@ export default function Home() {
 }
 ```
 
-> **Tip for Arabic-first businesses:** if the user picked Arabic, set `dir="rtl"` and `lang="ar"` on the `<main>` (or in `layout.tsx`), and flip the user-bubble alignment to the left, so the chat reads naturally right-to-left.
+> **Tip for Arabic-first businesses:** if the user picked Arabic, set `dir="rtl"` and `lang="ar"` on the `<main>` (or in `layout.tsx`), and flip the user-bubble alignment to the left, so the chat reads naturally right-to-left. (Do the same in the Step 6a preview.)
 
 **File 7: `scripts/index-docs.ts`** — one-time embedding script
 ```ts
@@ -457,10 +520,10 @@ OPENROUTER_API_KEY=
 **File 11:** install the extra deps in one shot:
 ```bash
 npm install openai pdf-parse
-npm install -D tsx @types/pdf-parse
+npm install -D tsx
 ```
 
-**Branch C (no sandbox):** print each file as a code block; tell the user to save them in the same paths inside the project folder, then run the install commands.
+(Branch C is already covered at the top of 6b — print each file as a code block in chat, tell the user to save them in the same paths, then dictate the install commands one by one.)
 
 ---
 
@@ -475,7 +538,7 @@ npm install -D tsx @types/pdf-parse
    ```bash
    npm run dev
    ```
-4. **Branch A:** watch the Bash output until you see `Ready in <Xms>` and `Local: http://localhost:3000`. Tell the user: *"✅ Your chatbot is running. Open http://localhost:3000 in your browser."* **Branch B/C:** tell the user to watch for the same lines in their own terminal and then open the URL.
+4. **Branch A:** watch the Bash output until you see `Ready in <Xms>` and `Local: http://localhost:3000`. Tell the user: *"✅ Your chatbot is running. Open http://localhost:3000 in your browser."* **Branch B/C:** tell the user to watch for the same lines in their own terminal and then open the URL. Remind them this is the full version of the bot they already met in the live preview — now with their real docs and key.
 5. **Sanity test:** ask the user to send the message "hello" in the chat. They should see a friendly reply. If they get an error, check `.env.local` first.
 
 If the user has docs ready, skip to Step 8. If not, they can stop here, add docs later, re-run `npm run index`, and restart.
@@ -491,7 +554,7 @@ If the user has docs ready, skip to Step 8. If not, they can stop here, add docs
    ```
 3. Watch for `✅ Indexed N chunks from /docs`. If N is 0, the docs folder is empty.
 4. Restart `npm run dev` so the server picks up the new `docs.index.json`.
-5. Have the user test a question that's actually answered in their docs — verify the bot uses the doc content.
+5. Have the user test a question that's actually answered in their docs — verify the bot uses the doc content. (This is the thing the live preview *couldn't* do — point that out so the upgrade feels real.)
 
 ---
 
@@ -532,6 +595,7 @@ If yes, ask **where**:
 
 Tell the user (in their chosen language):
 
+- **Live preview:** (Branch B, if shown) "the bot you talked to up top was a quick demo — the version below is the real one."
 - **Local URL:** http://localhost:3000
 - **Live URL:** (if deployed) the `*.pages.dev` or `*.vercel.app`
 - **To add tools:** "Come back and ask me — 'add a tool that sends a confirmation email to the customer' or 'add a tool that looks up an order by phone number.'"
@@ -543,7 +607,7 @@ Tell the user (in their chosen language):
 
 ## Branch C (pure text, no tools) fallback — short summary
 
-If you're a bare text chat with no sandbox and no picker, the flow above doesn't change conceptually — you just walk the user through every command yourself. Be EXTRA patient. Ask the language question in plain text first, then run the whole session in that language. Wait for the user to confirm each step. Print every file in full as a code block. Don't promise to "run" anything — you can't.
+If you're a bare text chat with no sandbox and no picker, the flow above doesn't change conceptually — you just walk the user through every command yourself. You can't render a live preview, so don't promise one; be upfront that the see-it-live moment needs a tool like claude.ai or running it locally. Be EXTRA patient. Ask the language question in plain text first, then run the whole session in that language. Wait for the user to confirm each step. Print every file in full as a code block. Don't promise to "run" anything — you can't.
 
 ---
 
