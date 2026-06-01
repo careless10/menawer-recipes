@@ -1,4 +1,4 @@
-# Build My Business Chatbot — Claude prompt (v2)
+# Build My Business Chatbot — Claude prompt (v3)
 
 > **You are reading this:** copy the *entire* contents of this file (Ctrl/Cmd+A → Ctrl/Cmd+C) and paste it into Claude. Hit enter. Claude takes it from there.
 
@@ -16,55 +16,42 @@ Before you do anything else, figure out which environment you're running in. The
 
 There are three possibilities:
 
-- **A. Claude Code** (the CLI on the user's actual machine) — you have `Bash`, `Write`, `Edit`, `Read`, `AskUserQuestion`, `WebFetch`, and full filesystem access. **You can do the work for the user.** Default to this branch if you have these tools.
-- **B. Codex / sandbox** (Python or shell sandbox) — you have a sandboxed filesystem and shell, but you can't install software on the user's machine. **You build the project in the sandbox and have the user download it.**
-- **C. claude.ai web** (the web chat, no tools) — you can only output text. **You walk the user through every step manually.**
+- **A. Claude Code** (the CLI on the user's actual machine) — you have `Bash`, `Write`, `Edit`, `Read`, an interactive question picker, `WebFetch`, and full filesystem access. **You can do everything for the user**, including installing software and running the live server on their machine. Default to this branch if you have these tools.
+- **B. Sandbox harness** (Codex, claude.ai web, or similar — a hosted Python/shell sandbox) — you have a sandboxed filesystem and shell, so **you can build the entire project yourself**, but you can't install software on the user's machine or run the server they'll open in their browser. **You build the full project in the sandbox, have the user download it, then walk them through the install/run commands on their own computer.** Many of these harnesses ALSO give you an interactive question picker — see the capability check in Step 1; don't assume you're text-only.
+- **C. Pure text, no tools** (a bare chat with no sandbox and no picker) — you can only output text. **You walk the user through every step manually**, printing every file in full and waiting for them to confirm each step.
 
-Quick check: try to read your own tool list. If you see tools named `Bash`, `Write`, and `AskUserQuestion`, you're in Claude Code (A). If you see Python execution but no `Write` tool, you're Codex (B). If you have nothing but text output, you're web (C).
+Quick check: read your own tool list. If you see a `Write`/`Edit` tool plus `Bash` and a question picker, you're **A**. If you can execute code / write files in a sandbox but can't reach the user's machine, you're **B** (this is what claude.ai web is today — it has a sandbox AND usually a picker). If you have nothing but text output, you're **C**.
 
-**State clearly to the user which environment you're in and what that means for them.** Example:
+**State clearly to the user which environment you're in and what that means for them.** Examples:
 
 > *"I'm running as Claude Code on your Mac, which means I can install things, write files, and run commands for you. You'll just answer a few questions and watch. Ready?"*
+
+> *"I'm running in claude.ai's sandbox. I'll build the whole project for you here and hand it over as a one-click download — then you'll run two short commands on your own computer, and I'll walk you through each. Ready?"*
 
 Then proceed to Step 1.
 
 ---
 
-### Step 1 — Ask the user's preferred language
+### Step 1 — Pick the language, set the tone, detect your tools
 
-Before anything else, ask:
+**First, ask the user's preferred language — before anything else.** Use your harness's native multiple-choice question picker if you have one (see capability check below); otherwise ask in one plain-text line. Offer at least:
 
-> *"Which language should we work in? Arabic or English?"*
+- **English**
+- **العربية (Arabic)**
 
-**Branch A (Claude Code):** use **AskUserQuestion** with these options:
-- العربية (Arabic)
-- English
+Then **conduct the entire rest of the session in the language they pick** — every question, confirmation, status line, and explanation. (Keep code, filenames, commands, and env-var names in English regardless; only the prose around them switches.)
 
-**Branch B/C:** ask in both languages so the user can pick either way.
-
-**For the rest of this session, the chosen language is binding:**
-- All your **conversation** with the user — questions, explanations, confirmations, errors — goes in that language.
-- All **code, filenames, command syntax, technical identifiers (variables, API names)** stay in **English** — that's universal and non-negotiable.
-- The chatbot you're about to build for them gets its **system prompt and UI strings written in the user's chosen language** (so a Khaleeji shop owner ends up with a chatbot that greets customers in Khaleeji Arabic).
-
-If they pick Arabic, switch into **Khaleeji** (شنو / مو / يبا / تبي / خلّني — never MSA, never Saudi/Levantine). This is the @eng_menawer audience's dialect.
-
-Once they've picked, briefly confirm in the chosen language ("تمام، نكمل بالعربي" or "Great, we'll continue in English") and move to Step 2.
-
----
-
-### Step 2 — Set the right tone
+**Interactive questions — detect, don't assume.** Before asking any *multiple-choice* question in this recipe, check your own tool list for an interactive question/picker. It may be named `AskUserQuestion` (Claude Code), `ask_user_input_v0` (claude.ai web), or something else depending on the harness. **If you have one, USE it for every multiple-choice question** — it gives the user clean tappable options instead of making them type. **If you have none, ask the same question in plain text.** *Free-text* questions (business name, example customer questions) are ALWAYS conversational — never force them into buttons, there's nothing to put on the options.
 
 Throughout this session:
 
 - **No jargon without translation.** First time you say "API key," explain it in one sentence ("a password your code uses to talk to a service").
 - **Verify visually after each step.** Don't say "done" without showing what changed: `✅ Node v22.21.1 detected`, `✅ folder created at ~/Desktop/myco-chatbot`, etc.
 - **Never blame the user.** If something fails, calmly say "that's a known one, let me fix it" — even if it wasn't.
-- **Use AskUserQuestion** (Branch A only) for every choice — it gives the user a clean picker instead of asking them to type. Almost every question in this recipe is a multi-choice.
 
 ---
 
-### Step 3 — Detect the operating system
+### Step 2 — Detect the operating system
 
 **Branch A (Claude Code):** Run this and announce what you see:
 ```bash
@@ -75,31 +62,31 @@ uname -s && uname -m
 - Output starting with `MINGW`/`CYGWIN`/`MSYS` → Windows running a Unix shell (rare). Treat as Linux-ish.
 - If `uname` fails entirely, it's likely Windows PowerShell. Switch your approach.
 
-**Branch B/C:** Ask the user with AskUserQuestion (if available) or plain text: macOS / Windows / Linux?
+**Branch B/C:** Ask the user (picker if available, else plain text): macOS / Windows / Linux? You need this because the install commands in Step 4 — and the commands the user will run on their own machine after downloading — differ per OS.
 
 Tell the user what you detected so they know you're paying attention.
 
 ---
 
-### Step 4 — Interview the user (the personalization)
+### Step 3 — Interview the user (the personalization)
 
-Ask these **four questions, one at a time**. In Branch A, **use AskUserQuestion** with the suggested options. In B/C, ask conversationally.
+Ask these **four questions**. Ask **Q1 and Q2 one at a time and conversationally** (they're free text — read the business answer before shaping how you ask for examples). You **may combine Q3 and Q4 into a single picker call** if your picker supports multiple questions at once (most do, up to ~3) — it feels snappier than two round-trips.
 
-**Q1: What's your business?**
-- Free text. Get name + one sentence about what they do.
+**Q1 (free text — ask conversationally): What's your business?**
+- Get name + one sentence about what they do.
 - Use this for the bot's system prompt and the folder name.
 
-**Q2: What are two example questions customers ask you that the bot should handle?**
-- Free text. Don't accept vague answers — push for *real* examples ("when's the next available slot?", "do you ship to Riyadh?", etc.). These go in the bot's prompt as guidance.
+**Q2 (free text — ask conversationally): What are two example questions customers ask you that the bot should handle?**
+- Don't accept vague answers — push for *real* examples ("when's the next available slot?", "do you ship to Riyadh?", etc.). These go in the bot's prompt as guidance.
 
-**Q3: What docs do you have for the bot to learn from?** (AskUserQuestion, multiSelect)
+**Q3 (picker if available, multi-select): What docs do you have for the bot to learn from?**
 - PDFs (price lists, brochures, policies)
 - Word docs
 - Markdown / plain text notes
 - Web pages (a list of URLs you'll paste)
 - I don't have any yet — I'll add them later
 
-**Q4: What's ONE action the bot should do besides answering?** (AskUserQuestion, single-select)
+**Q4 (picker if available, single-select): What's ONE action the bot should do besides answering?**
 - Book an appointment
 - Look up an order or customer
 - Send an email or SMS
@@ -107,7 +94,7 @@ Ask these **four questions, one at a time**. In Branch A, **use AskUserQuestion*
 - Check inventory / stock
 - Other (you'll describe it)
 
-**After all four, repeat back what you heard and confirm**:
+**After all four, repeat back what you heard and confirm** (in the user's chosen language):
 
 > *"Got it — for **<business>**, the bot will answer questions like '<example1>' and '<example2>', read from your **<doc types>**, and can **<action>**. I'll build that now. This will take about 10 minutes."*
 
@@ -115,7 +102,7 @@ Don't proceed until the user confirms.
 
 ---
 
-### Step 5 — Check prerequisites and install what's missing
+### Step 4 — Check prerequisites and install what's missing
 
 **Branch A (Claude Code):** run checks and install via Bash. Be verbose so the user can follow.
 
@@ -144,11 +131,11 @@ Don't proceed until the user confirms.
 
 After each: tell the user what you got and what it means in plain words.
 
-**Branch C (web):** walk the user through the same — give them links, screenshots descriptions, and the exact commands to type in Terminal/PowerShell. Wait for them to confirm each step before moving on. Don't dump everything at once.
+**Branch B (sandbox) and C (text):** the user will install these on *their own* machine after the download. Walk them through the same checks — give them links and the exact commands to type in Terminal/PowerShell — and wait for them to confirm each step before moving on. Don't dump everything at once.
 
 ---
 
-### Step 6 — Get the OpenRouter API key
+### Step 5 — Get the OpenRouter API key
 
 OpenRouter is the bot's brain. It's one signup that gives you access to Claude, GPT, Gemini, Llama — every major AI model. Free credits to start; pay-as-you-go after.
 
@@ -158,17 +145,17 @@ OpenRouter is the bot's brain. It's one signup that gives you access to Claude, 
 2. After signing in, open https://openrouter.ai/keys → click "Create Key" → name it "my-chatbot" → copy the key (it starts with `sk-or-v1-...`)
 3. **Important:** tell the user to keep this tab open or paste the key into a notes app — they'll need it in a minute, and OpenRouter doesn't show it again after you close the modal.
 
-**Branch A:** use AskUserQuestion to ask "Do you have your OpenRouter key copied?" with options [Yes I have it / I'm signing up now / I need help]. Wait until they say yes.
+**Picker (any branch that has one):** ask "Do you have your OpenRouter key copied?" with options [Yes I have it / I'm signing up now / I need help]. Wait until they say yes. **No picker:** ask in plain text and wait for the user to say they have the key.
 
-**Branch C:** wait for the user to say they have the key.
-
-You will use this key in Step 8 to populate `.env.local`. **Never write it into committed code** — only into `.env.local` which is git-ignored.
+You will use this key in Step 7 to populate `.env.local`. **Never write it into committed code** — only into `.env.local` which is git-ignored. In a sandbox (Branch B), prefer to let the user paste the key into `.env.local` themselves after download rather than placing a real secret into a file you generate.
 
 ---
 
-### Step 7 — Scaffold the Next.js project
+### Step 6 — Scaffold the Next.js project
 
 **Branch A (Claude Code):** run these commands via Bash, in order. Stop on failure.
+
+**Branch B (sandbox):** run the same scaffold inside your sandbox so you produce a real, complete project the user can download — then create every file below with your write tool. Don't paste files for the user to copy by hand if you can write them directly.
 
 ```bash
 # Pick a folder name from the business name (e.g., "mycafe" or "alabbar-trading")
@@ -185,7 +172,7 @@ npx --yes create-next-app@latest . \
 
 `create-next-app` will produce a fresh Next.js 15 project. Wait for it to finish.
 
-Then create the chatbot files using your `Write` tool. Each file in full — no placeholders, no `// ...rest of code`:
+Then create the chatbot files. Each file in full — no placeholders, no `// ...rest of code`:
 
 **File 1: `src/lib/openrouter.ts`** — the LLM client
 ```ts
@@ -195,7 +182,7 @@ export const openrouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: "https://openrouter.ai/api/v1",
   defaultHeaders: {
-    "HTTP-Referer": "https://github.com/careless10/chatbot-recipe",
+    "HTTP-Referer": "https://recipes.menawer.com/bot",
     "X-Title": "<BUSINESS_NAME>",
   },
 });
@@ -427,6 +414,8 @@ export default function Home() {
 }
 ```
 
+> **Tip for Arabic-first businesses:** if the user picked Arabic, set `dir="rtl"` and `lang="ar"` on the `<main>` (or in `layout.tsx`), and flip the user-bubble alignment to the left, so the chat reads naturally right-to-left.
+
 **File 7: `scripts/index-docs.ts`** — one-time embedding script
 ```ts
 import { buildIndex } from "../src/lib/rag";
@@ -471,29 +460,29 @@ npm install openai pdf-parse
 npm install -D tsx @types/pdf-parse
 ```
 
-**Branch B/C:** print each file as a code block; tell the user to save them in the same paths inside the project folder, then run the install commands.
+**Branch C (no sandbox):** print each file as a code block; tell the user to save them in the same paths inside the project folder, then run the install commands.
 
 ---
 
-### Step 8 — Wire the key and run it
+### Step 7 — Wire the key and run it
 
 1. Copy `.env.local.example` → `.env.local`:
    ```bash
    cp .env.local.example .env.local
    ```
-2. Open `.env.local` and paste the OpenRouter key after `OPENROUTER_API_KEY=`. **Branch A:** use Write to update `.env.local` directly with the key the user gave you. Confirm the line shows `OPENROUTER_API_KEY=sk-or-v1-...` (don't print the actual key back to the user; just confirm it's set).
-3. Start the dev server:
+2. Open `.env.local` and paste the OpenRouter key after `OPENROUTER_API_KEY=`. **Branch A:** use Write to update `.env.local` directly with the key the user gave you. Confirm the line shows `OPENROUTER_API_KEY=sk-or-v1-...` (don't print the actual key back to the user; just confirm it's set). **Branch B (sandbox):** have the user paste their key into `.env.local` themselves after they download the project — don't bake a real secret into the files you generate.
+3. Start the dev server (the user runs this on their own machine in Branch B/C):
    ```bash
    npm run dev
    ```
-4. **Branch A:** watch the Bash output until you see `Ready in <Xms>` and `Local: http://localhost:3000`. Tell the user: *"✅ Your chatbot is running. Open http://localhost:3000 in your browser."*
+4. **Branch A:** watch the Bash output until you see `Ready in <Xms>` and `Local: http://localhost:3000`. Tell the user: *"✅ Your chatbot is running. Open http://localhost:3000 in your browser."* **Branch B/C:** tell the user to watch for the same lines in their own terminal and then open the URL.
 5. **Sanity test:** ask the user to send the message "hello" in the chat. They should see a friendly reply. If they get an error, check `.env.local` first.
 
-If the user has docs ready, skip to Step 9. If not, they can stop here, add docs later, re-run `npm run index`, and restart.
+If the user has docs ready, skip to Step 8. If not, they can stop here, add docs later, re-run `npm run index`, and restart.
 
 ---
 
-### Step 9 — Add the docs and index them
+### Step 8 — Add the docs and index them
 
 1. Tell the user to drop their docs into the `docs/` folder (PDFs, .md, .txt — whatever they have).
 2. Run the indexer:
@@ -506,13 +495,13 @@ If the user has docs ready, skip to Step 9. If not, they can stop here, add docs
 
 ---
 
-### Step 10 — (Optional) Put it online
+### Step 9 — (Optional) Put it online
 
-Ask the user (AskUserQuestion in Branch A):
+Ask the user (picker if available):
 
 > *"Local is working. Do you want to put this online so other people can use it?"*
 > - Yes → continue
-> - Not yet → wrap up at Step 11
+> - Not yet → wrap up at Step 10
 
 If yes, ask **where**:
 
@@ -532,16 +521,16 @@ If yes, ask **where**:
    - Triggering the first deploy and reporting back the `*.pages.dev` URL
 5. Verify the deployed URL responds the same as local.
 
-**If Cloudflare + Branch C** (no MCP available):
+**If Cloudflare + Branch B/C** (no MCP available):
 - Walk them through the Cloudflare dashboard manually: Workers & Pages → Create → Connect Git → pick the repo → Framework preset: Next.js → set env var → Deploy.
 
 **If Vercel:** simpler — `npx vercel` and follow the prompts. They'll need to sign up at vercel.com first.
 
 ---
 
-### Step 11 — Wrap up
+### Step 10 — Wrap up
 
-Tell the user:
+Tell the user (in their chosen language):
 
 - **Local URL:** http://localhost:3000
 - **Live URL:** (if deployed) the `*.pages.dev` or `*.vercel.app`
@@ -552,9 +541,9 @@ Tell the user:
 
 ---
 
-## Branch C (web claude.ai) fallback — short summary
+## Branch C (pure text, no tools) fallback — short summary
 
-If you're web Claude with no tools, the flow above doesn't change conceptually — you just walk the user through every command yourself. Be EXTRA patient. Wait for them to confirm each step. Print every file in full as a code block. Don't promise to "run" anything — you can't.
+If you're a bare text chat with no sandbox and no picker, the flow above doesn't change conceptually — you just walk the user through every command yourself. Be EXTRA patient. Ask the language question in plain text first, then run the whole session in that language. Wait for the user to confirm each step. Print every file in full as a code block. Don't promise to "run" anything — you can't.
 
 ---
 
