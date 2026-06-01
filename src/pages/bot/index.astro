@@ -1,0 +1,200 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import recipeRaw from '../../content/build-my-chatbot.md?raw';
+
+const recipeLength = recipeRaw.length;
+---
+
+<Layout
+  title="شات بوت لشغلك · من @eng_menawer"
+  description="انسخ الوصفة، الصقها في كلود، احصل على شات بوت لـبزنسك. RAG + Tool calling عبر OpenRouter."
+  ogPath="/bot"
+  noindex
+>
+
+  <!-- Language toggle -->
+  <div class="mx-auto max-w-4xl px-5 sm:px-8 pt-5 flex justify-end">
+    <a href="/bot/en"
+       class="inline-flex items-center gap-2 text-sm text-ink/60 hover:text-claude-orange transition-colors font-semibold">
+      English
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M12 5l7 7-7 7" />
+      </svg>
+    </a>
+  </div>
+
+  <!-- ── Hero (Arabic) ── -->
+  <section dir="rtl" class="mx-auto max-w-4xl px-5 sm:px-8 pt-8 sm:pt-16 pb-12 text-right font-cairo">
+    <span class="inline-flex flex-row-reverse items-center gap-2 text-xs uppercase tracking-[0.18em] font-semibold text-claude-orange">
+      <span class="w-1.5 h-1.5 rounded-full bg-claude-orange"></span>
+      الوصفة الأولى · من @eng_menawer
+    </span>
+
+    <h1 class="mt-6 font-extrabold tracking-tight leading-[1.15] text-5xl sm:text-7xl">
+      سوّ <span class="text-claude-orange">شات بوت</span> لـبزنسك
+    </h1>
+
+    <p class="mt-8 text-lg sm:text-xl text-ink/75 leading-relaxed max-w-2xl ml-auto">
+      انسخ الوصفة وحطّها في كلود. جاوب على ٤ أسئلة قصيرة. شات بوت شغّال لـبزنسك —
+      <strong class="text-ink">RAG + Tool calling عبر OpenRouter، بدون لف ودوران.</strong>
+    </p>
+
+    <div class="mt-10 flex flex-row-reverse flex-wrap gap-3 items-center">
+      <button
+        id="copy-btn"
+        class="group inline-flex items-center justify-center gap-3 bg-claude-orange text-cream px-7 py-4 rounded-full font-semibold text-base hover:bg-ink transition-colors cursor-pointer"
+        aria-label="انسخ الوصفة"
+      >
+        <svg class="copy-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <svg class="check-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6L9 17l-5-5"></path>
+        </svg>
+        <span class="copy-label">انسخ الوصفة</span>
+      </button>
+    </div>
+
+    <p class="mt-5 text-xs text-ink/40 uppercase tracking-wider" dir="ltr">
+      {recipeLength.toLocaleString()} characters · paste into <a href="https://claude.ai" target="_blank" rel="noopener" class="text-ink/55 hover:text-claude-orange underline underline-offset-2">claude.ai</a>
+    </p>
+  </section>
+
+  <!-- ── كيف تشتغل ── -->
+  <section dir="rtl" class="mx-auto max-w-4xl px-5 sm:px-8 pb-16 font-cairo text-right">
+    <h2 class="text-2xl font-bold text-ink mb-6">كيف تشتغل</h2>
+
+    <ol class="grid sm:grid-cols-2 gap-4">
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex flex-row-reverse items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">١</span>
+          <h3 class="font-bold text-lg">افتح كلود</h3>
+        </div>
+        <p class="text-ink/75 text-sm leading-relaxed">
+          <a href="https://claude.ai" target="_blank" rel="noopener" class="text-ink/85 underline underline-offset-2 decoration-claude-orange/40 hover:text-claude-orange">claude.ai</a> (الأسهل، من المتصفح)
+          أو <a href="https://www.anthropic.com/claude-code" target="_blank" rel="noopener" class="text-ink/85 underline underline-offset-2 decoration-claude-orange/40 hover:text-claude-orange">Claude Code</a> إذا عندك.
+        </p>
+      </li>
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex flex-row-reverse items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">٢</span>
+          <h3 class="font-bold text-lg">الصق الوصفة</h3>
+        </div>
+        <p class="text-ink/75 text-sm leading-relaxed">
+          اضغط الزر البرتقالي فوق، والصق الوصفة كاملة في محادثة جديدة في كلود.
+        </p>
+      </li>
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex flex-row-reverse items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">٣</span>
+          <h3 class="font-bold text-lg">جاوب على ٤ أسئلة</h3>
+        </div>
+        <p class="text-ink/75 text-sm leading-relaxed">
+          اسم شغلك، الأسئلة اللي يكررها العملاء، شنو الملفات اللي عندك، وأكشن واحد تبي البوت يسوّيه.
+        </p>
+      </li>
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex flex-row-reverse items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">٤</span>
+          <h3 class="font-bold text-lg">اتبع الخطوات</h3>
+        </div>
+        <p class="text-ink/75 text-sm leading-relaxed">
+          كلود يكتب الكود كامل ويخطّيك خطوة خطوة. شات بوت شغّال جاهز.
+        </p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ── اللي بيوصلك في النهاية ── -->
+  <section dir="rtl" class="mx-auto max-w-4xl px-5 sm:px-8 pb-16 font-cairo text-right">
+    <h2 class="text-2xl font-bold text-ink mb-6">اللي بيوصلك في النهاية</h2>
+
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <h3 class="font-semibold text-lg text-claude-orange" dir="ltr">OpenRouter</h3>
+        <p class="mt-2 text-ink/75 text-sm leading-relaxed">
+          مفتاح واحد، كل المودلات — Claude, GPT, Gemini, Llama. كريدت مجاني للبداية. ما تنحبس بمزوّد.
+        </p>
+      </div>
+      <div class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <h3 class="font-semibold text-lg text-claude-orange" dir="ltr">RAG</h3>
+        <p class="mt-2 text-ink/75 text-sm leading-relaxed">
+          البوت يقرأ <em>ملفاتك</em> — PDF, Word, markdown — ويجاوب منها.
+        </p>
+      </div>
+      <div class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <h3 class="font-semibold text-lg text-claude-orange" dir="ltr">Tool Calling</h3>
+        <p class="mt-2 text-ink/75 text-sm leading-relaxed">
+          البوت <em>يسوّي</em> أشياء — يحجز، يحوّل، يدزّ، يدوّر. مو بس كلام.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Bottom CTA ── -->
+  <section class="mx-auto max-w-4xl px-5 sm:px-8 pb-20">
+    <div dir="rtl" class="bg-ink text-cream rounded-2xl p-8 sm:p-10 flex flex-col sm:flex-row-reverse sm:items-center sm:justify-between gap-6 font-cairo text-right">
+      <div>
+        <p class="text-cream/60 text-xs uppercase tracking-[0.18em] font-semibold">جاهز؟</p>
+        <p class="mt-3 text-2xl sm:text-3xl font-bold tracking-tight">
+          انسخ الوصفة، الصقها في كلود، اطلقه.
+        </p>
+      </div>
+      <button
+        id="copy-btn-bottom"
+        class="inline-flex items-center justify-center gap-3 bg-claude-orange text-cream px-7 py-4 rounded-full font-semibold text-base hover:bg-cream hover:text-ink transition-colors cursor-pointer whitespace-nowrap shrink-0"
+        aria-label="انسخ الوصفة"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        انسخ الوصفة
+      </button>
+    </div>
+  </section>
+
+  <!-- payload + copy script -->
+  <script id="recipe-payload" type="text/plain" set:html={recipeRaw}></script>
+  <script is:inline data-toast-copied="تم النسخ — الصق في كلود" data-toast-original="انسخ الوصفة">
+    (function () {
+      const payload = document.getElementById('recipe-payload')?.textContent ?? '';
+      const root = document.currentScript;
+      const COPIED = root?.dataset?.toastCopied ?? 'Copied — paste into Claude';
+      const ORIGINAL = root?.dataset?.toastOriginal ?? 'Copy the recipe';
+
+      async function copyRecipe(btn) {
+        try {
+          await navigator.clipboard.writeText(payload);
+          flashSuccess(btn);
+        } catch (err) {
+          const ta = document.createElement('textarea');
+          ta.value = payload;
+          ta.style.position = 'fixed';
+          ta.style.left = '-1000px';
+          document.body.appendChild(ta);
+          ta.focus(); ta.select();
+          try { document.execCommand('copy'); flashSuccess(btn); }
+          catch { alert("Couldn't copy automatically — please select the recipe text manually."); }
+          finally { document.body.removeChild(ta); }
+        }
+      }
+
+      function flashSuccess(btn) {
+        const copyIcon = btn.querySelector('.copy-icon');
+        const checkIcon = btn.querySelector('.check-icon');
+        const label = btn.querySelector('.copy-label') ?? btn.querySelector('span');
+        if (copyIcon && checkIcon) { copyIcon.classList.add('hidden'); checkIcon.classList.remove('hidden'); }
+        if (label) label.textContent = COPIED;
+        setTimeout(() => {
+          if (copyIcon && checkIcon) { copyIcon.classList.remove('hidden'); checkIcon.classList.add('hidden'); }
+          if (label) label.textContent = ORIGINAL;
+        }, 2400);
+      }
+
+      document.getElementById('copy-btn')?.addEventListener('click', (e) => copyRecipe(e.currentTarget));
+      document.getElementById('copy-btn-bottom')?.addEventListener('click', (e) => copyRecipe(e.currentTarget));
+    })();
+  </script>
+</Layout>

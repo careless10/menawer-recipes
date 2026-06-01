@@ -4,6 +4,8 @@
 User-agent: *
 Allow: /
 Disallow: /bot
+Disallow: /bot/
+Disallow: /bot/en
 Disallow: /rag
 Disallow: /mcp
 Disallow: /tools

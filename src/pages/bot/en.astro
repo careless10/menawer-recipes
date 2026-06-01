@@ -1,0 +1,204 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import recipeRaw from '../../content/build-my-chatbot.md?raw';
+
+const recipeLength = recipeRaw.length;
+---
+
+<Layout
+  title="Business Chatbot Recipe · @eng_menawer"
+  description="Paste this recipe into Claude and get a working business chatbot — RAG + Tool calling via OpenRouter."
+  ogPath="/bot/en"
+  noindex
+>
+
+  <!-- Language toggle -->
+  <div class="mx-auto max-w-4xl px-5 sm:px-8 pt-5 flex justify-end">
+    <a href="/bot"
+       class="inline-flex items-center gap-2 text-sm text-ink/60 hover:text-claude-orange transition-colors font-semibold font-cairo"
+       dir="rtl">
+      العربية
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M12 5l7 7-7 7" />
+      </svg>
+    </a>
+  </div>
+
+  <!-- ── Hero ── -->
+  <section class="mx-auto max-w-4xl px-5 sm:px-8 pt-8 sm:pt-16 pb-12">
+    <span class="inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] font-semibold text-claude-orange">
+      <span class="w-1.5 h-1.5 rounded-full bg-claude-orange"></span>
+      Recipe #1 · From @eng_menawer
+    </span>
+
+    <h1 class="mt-6 text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.04]">
+      Build a chatbot
+      <br class="hidden sm:block" />
+      for <span class="text-claude-orange">your business.</span>
+    </h1>
+
+    <p class="mt-7 text-lg sm:text-xl text-ink/70 leading-relaxed max-w-2xl">
+      Paste this recipe into Claude. Answer 4 short questions. Get a working chatbot
+      tailored to your business —
+      <strong class="text-ink">RAG + Tool calling, OpenRouter, no fluff</strong>.
+    </p>
+
+    <div class="mt-10 flex flex-col sm:flex-row gap-3 sm:items-center">
+      <button
+        id="copy-btn"
+        class="group inline-flex items-center justify-center gap-3 bg-claude-orange text-cream px-7 py-4 rounded-full font-semibold text-base hover:bg-ink transition-colors cursor-pointer"
+        aria-label="Copy the recipe to your clipboard"
+      >
+        <svg class="copy-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <svg class="check-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6L9 17l-5-5"></path>
+        </svg>
+        <span class="copy-label">Copy the recipe</span>
+      </button>
+    </div>
+
+    <p class="mt-5 text-xs text-ink/40 uppercase tracking-wider">
+      {recipeLength.toLocaleString()} characters · paste into <a href="https://claude.ai" target="_blank" rel="noopener" class="text-ink/55 hover:text-claude-orange underline underline-offset-2">claude.ai</a>
+    </p>
+  </section>
+
+  <!-- ── How it works ── -->
+  <section class="mx-auto max-w-4xl px-5 sm:px-8 pb-16">
+    <h2 class="text-2xl font-bold text-ink mb-6">How it works</h2>
+
+    <ol class="grid sm:grid-cols-2 gap-4">
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">1</span>
+          <h3 class="font-bold text-lg">Open Claude</h3>
+        </div>
+        <p class="text-ink/75 text-sm leading-relaxed">
+          <a href="https://claude.ai" target="_blank" rel="noopener" class="text-ink/85 underline underline-offset-2 decoration-claude-orange/40 hover:text-claude-orange">claude.ai</a> (web, easiest)
+          or <a href="https://www.anthropic.com/claude-code" target="_blank" rel="noopener" class="text-ink/85 underline underline-offset-2 decoration-claude-orange/40 hover:text-claude-orange">Claude Code</a> if you've already got it.
+        </p>
+      </li>
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">2</span>
+          <h3 class="font-bold text-lg">Paste the recipe</h3>
+        </div>
+        <p class="text-ink/75 text-sm leading-relaxed">
+          Hit the orange button above, then paste the entire thing into a new Claude chat.
+        </p>
+      </li>
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">3</span>
+          <h3 class="font-bold text-lg">Answer 4 quick questions</h3>
+        </div>
+        <p class="text-ink/75 text-sm leading-relaxed">
+          Business name, the repetitive customer questions, what docs you have, and one action your bot should be able to do.
+        </p>
+      </li>
+      <li class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <div class="flex items-baseline gap-3 mb-2">
+          <span class="font-extrabold text-claude-orange text-2xl">4</span>
+          <h3 class="font-bold text-lg">Follow the setup</h3>
+        </div>
+        <p class="text-ink/75 text-sm leading-relaxed">
+          Claude writes the full code + step-by-step setup. Running chatbot when it's done.
+        </p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ── What you'll have ── -->
+  <section class="mx-auto max-w-4xl px-5 sm:px-8 pb-16">
+    <h2 class="text-2xl font-bold text-ink mb-6">What you'll have when it's done</h2>
+
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <h3 class="font-semibold text-lg text-claude-orange">OpenRouter</h3>
+        <p class="mt-2 text-ink/75 text-sm leading-relaxed">
+          One API key, every major model — Claude, GPT, Gemini, Llama. Free credits to start. Never locked in.
+        </p>
+      </div>
+      <div class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <h3 class="font-semibold text-lg text-claude-orange">RAG</h3>
+        <p class="mt-2 text-ink/75 text-sm leading-relaxed">
+          The bot reads <em>your</em> documents — PDFs, Word, markdown, plain text — and answers from them.
+        </p>
+      </div>
+      <div class="bg-paper/40 border border-ink/5 rounded-xl p-5">
+        <h3 class="font-semibold text-lg text-claude-orange">Tool Calling</h3>
+        <p class="mt-2 text-ink/75 text-sm leading-relaxed">
+          The bot can <em>do</em> things — book, transfer, send, look up. Not just talk.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Bottom CTA ── -->
+  <section class="mx-auto max-w-4xl px-5 sm:px-8 pb-20">
+    <div class="bg-ink text-cream rounded-2xl p-8 sm:p-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+      <div>
+        <p class="text-cream/60 text-xs uppercase tracking-[0.18em] font-semibold">Ready?</p>
+        <p class="mt-3 text-2xl sm:text-3xl font-bold tracking-tight">
+          Copy the recipe, paste into Claude, ship.
+        </p>
+      </div>
+      <button
+        id="copy-btn-bottom"
+        class="inline-flex items-center justify-center gap-3 bg-claude-orange text-cream px-7 py-4 rounded-full font-semibold text-base hover:bg-cream hover:text-ink transition-colors cursor-pointer whitespace-nowrap shrink-0"
+        aria-label="Copy the recipe to your clipboard"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        Copy the recipe
+      </button>
+    </div>
+  </section>
+
+  <!-- payload + copy script -->
+  <script id="recipe-payload" type="text/plain" set:html={recipeRaw}></script>
+  <script is:inline data-toast-copied="Copied — paste into Claude" data-toast-original="Copy the recipe">
+    (function () {
+      const payload = document.getElementById('recipe-payload')?.textContent ?? '';
+      const root = document.currentScript;
+      const COPIED = root?.dataset?.toastCopied ?? 'Copied — paste into Claude';
+      const ORIGINAL = root?.dataset?.toastOriginal ?? 'Copy the recipe';
+
+      async function copyRecipe(btn) {
+        try {
+          await navigator.clipboard.writeText(payload);
+          flashSuccess(btn);
+        } catch (err) {
+          const ta = document.createElement('textarea');
+          ta.value = payload;
+          ta.style.position = 'fixed';
+          ta.style.left = '-1000px';
+          document.body.appendChild(ta);
+          ta.focus(); ta.select();
+          try { document.execCommand('copy'); flashSuccess(btn); }
+          catch { alert("Couldn't copy automatically — please select the recipe text manually."); }
+          finally { document.body.removeChild(ta); }
+        }
+      }
+
+      function flashSuccess(btn) {
+        const copyIcon = btn.querySelector('.copy-icon');
+        const checkIcon = btn.querySelector('.check-icon');
+        const label = btn.querySelector('.copy-label') ?? btn.querySelector('span');
+        if (copyIcon && checkIcon) { copyIcon.classList.add('hidden'); checkIcon.classList.remove('hidden'); }
+        if (label) label.textContent = COPIED;
+        setTimeout(() => {
+          if (copyIcon && checkIcon) { copyIcon.classList.remove('hidden'); checkIcon.classList.add('hidden'); }
+          if (label) label.textContent = ORIGINAL;
+        }, 2400);
+      }
+
+      document.getElementById('copy-btn')?.addEventListener('click', (e) => copyRecipe(e.currentTarget));
+      document.getElementById('copy-btn-bottom')?.addEventListener('click', (e) => copyRecipe(e.currentTarget));
+    })();
+  </script>
+</Layout>
