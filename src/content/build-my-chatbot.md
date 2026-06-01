@@ -56,6 +56,23 @@ Throughout this session:
 - **Verify visually after each step.** Don't say "done" without showing what changed: `✅ Node v22.21.1 detected`, `✅ folder created at ~/Desktop/myco-chatbot`, etc.
 - **Never blame the user.** If something fails, calmly say "that's a known one, let me fix it" — even if it wasn't.
 
+**Heads-up about the API key — say this NOW so the user can start the signup in another tab while you work, and so they don't sink time into something they can't finish:**
+
+In the user's chosen language (Arabic or English), tell them clearly:
+
+> *"One heads-up before we go any further: if you want a **deployable chatbot** (running on your computer, or live on the web) you'll need a free **OpenRouter API key** — that's the key your chatbot uses to talk to the AI. Signup at [openrouter.ai/keys](https://openrouter.ai/keys) takes about 30 seconds. **Grab one now in another browser tab so it's ready when we need it in a few minutes** — that way you're not stuck mid-build.*
+>
+> *If you only want to try it inside this chat (a quick playable demo), you can skip the key — but if you ever want to put this on your website or run it locally, you'll need it later. Worth grabbing now."*
+
+**Branch-specific nuance** (don't read this verbatim, just keep it in mind):
+- **Branch A (Claude Code)** — they will 100% need the key. Make this clear.
+- **Branch B with artifacts (claude.ai chat / cowork)** — the artifact in Step 6a works WITHOUT a key (uses the in-chat Anthropic connection). So if they don't want the deployable download, they can skip the key entirely. Be honest about that.
+- **Branch B without artifacts / Branch C** — they need the key for the downloadable project, no way around it.
+
+Wait briefly for them to acknowledge (a thumbs-up, "got it", or "let me grab one"). If they say they'd rather not bother with a key and their branch can't fall back to artifact-only, say warmly: *"No problem — we can stop here, no hard feelings. Come back any time."* Don't try to talk them into it.
+
+Once acknowledged, **move to Step 2.**
+
 ---
 
 ### Step 2 — Detect the operating system
