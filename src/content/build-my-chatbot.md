@@ -30,7 +30,30 @@ Then proceed to Step 1.
 
 ---
 
-### Step 1 — Set the right tone
+### Step 1 — Ask the user's preferred language
+
+Before anything else, ask:
+
+> *"Which language should we work in? Arabic or English?"*
+
+**Branch A (Claude Code):** use **AskUserQuestion** with these options:
+- العربية (Arabic)
+- English
+
+**Branch B/C:** ask in both languages so the user can pick either way.
+
+**For the rest of this session, the chosen language is binding:**
+- All your **conversation** with the user — questions, explanations, confirmations, errors — goes in that language.
+- All **code, filenames, command syntax, technical identifiers (variables, API names)** stay in **English** — that's universal and non-negotiable.
+- The chatbot you're about to build for them gets its **system prompt and UI strings written in the user's chosen language** (so a Khaleeji shop owner ends up with a chatbot that greets customers in Khaleeji Arabic).
+
+If they pick Arabic, switch into **Khaleeji** (شنو / مو / يبا / تبي / خلّني — never MSA, never Saudi/Levantine). This is the @eng_menawer audience's dialect.
+
+Once they've picked, briefly confirm in the chosen language ("تمام، نكمل بالعربي" or "Great, we'll continue in English") and move to Step 2.
+
+---
+
+### Step 2 — Set the right tone
 
 Throughout this session:
 
@@ -41,7 +64,7 @@ Throughout this session:
 
 ---
 
-### Step 2 — Detect the operating system
+### Step 3 — Detect the operating system
 
 **Branch A (Claude Code):** Run this and announce what you see:
 ```bash
@@ -58,7 +81,7 @@ Tell the user what you detected so they know you're paying attention.
 
 ---
 
-### Step 3 — Interview the user (the personalization)
+### Step 4 — Interview the user (the personalization)
 
 Ask these **four questions, one at a time**. In Branch A, **use AskUserQuestion** with the suggested options. In B/C, ask conversationally.
 
@@ -92,7 +115,7 @@ Don't proceed until the user confirms.
 
 ---
 
-### Step 4 — Check prerequisites and install what's missing
+### Step 5 — Check prerequisites and install what's missing
 
 **Branch A (Claude Code):** run checks and install via Bash. Be verbose so the user can follow.
 
@@ -125,7 +148,7 @@ After each: tell the user what you got and what it means in plain words.
 
 ---
 
-### Step 5 — Get the OpenRouter API key
+### Step 6 — Get the OpenRouter API key
 
 OpenRouter is the bot's brain. It's one signup that gives you access to Claude, GPT, Gemini, Llama — every major AI model. Free credits to start; pay-as-you-go after.
 
@@ -139,11 +162,11 @@ OpenRouter is the bot's brain. It's one signup that gives you access to Claude, 
 
 **Branch C:** wait for the user to say they have the key.
 
-You will use this key in Step 7 to populate `.env.local`. **Never write it into committed code** — only into `.env.local` which is git-ignored.
+You will use this key in Step 8 to populate `.env.local`. **Never write it into committed code** — only into `.env.local` which is git-ignored.
 
 ---
 
-### Step 6 — Scaffold the Next.js project
+### Step 7 — Scaffold the Next.js project
 
 **Branch A (Claude Code):** run these commands via Bash, in order. Stop on failure.
 
@@ -452,7 +475,7 @@ npm install -D tsx @types/pdf-parse
 
 ---
 
-### Step 7 — Wire the key and run it
+### Step 8 — Wire the key and run it
 
 1. Copy `.env.local.example` → `.env.local`:
    ```bash
@@ -466,11 +489,11 @@ npm install -D tsx @types/pdf-parse
 4. **Branch A:** watch the Bash output until you see `Ready in <Xms>` and `Local: http://localhost:3000`. Tell the user: *"✅ Your chatbot is running. Open http://localhost:3000 in your browser."*
 5. **Sanity test:** ask the user to send the message "hello" in the chat. They should see a friendly reply. If they get an error, check `.env.local` first.
 
-If the user has docs ready, skip to Step 8. If not, they can stop here, add docs later, re-run `npm run index`, and restart.
+If the user has docs ready, skip to Step 9. If not, they can stop here, add docs later, re-run `npm run index`, and restart.
 
 ---
 
-### Step 8 — Add the docs and index them
+### Step 9 — Add the docs and index them
 
 1. Tell the user to drop their docs into the `docs/` folder (PDFs, .md, .txt — whatever they have).
 2. Run the indexer:
@@ -483,13 +506,13 @@ If the user has docs ready, skip to Step 8. If not, they can stop here, add docs
 
 ---
 
-### Step 9 — (Optional) Put it online
+### Step 10 — (Optional) Put it online
 
 Ask the user (AskUserQuestion in Branch A):
 
 > *"Local is working. Do you want to put this online so other people can use it?"*
 > - Yes → continue
-> - Not yet → wrap up at Step 10
+> - Not yet → wrap up at Step 11
 
 If yes, ask **where**:
 
@@ -516,7 +539,7 @@ If yes, ask **where**:
 
 ---
 
-### Step 10 — Wrap up
+### Step 11 — Wrap up
 
 Tell the user:
 
