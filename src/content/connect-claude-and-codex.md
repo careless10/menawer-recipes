@@ -1,0 +1,376 @@
+# Make Claude and ChatGPT Talk To Each Other — Claude prompt (v2)
+
+> **You are reading this:** copy the *entire* contents of this file (Ctrl/Cmd+A → Ctrl/Cmd+C) and paste it into **Claude Code** running in your terminal. Hit enter. Claude takes it from there.
+
+This recipe is from the [@eng_menawer](https://instagram.com/eng_menawer) channel. It wires up a **two-way channel between Claude Code and OpenAI's Codex (ChatGPT's coding agent)** on *your own machine*, so the two AIs can send each other messages instead of you copy-pasting between two terminals.
+
+**Works on macOS, Linux, and Windows.** Every step below was executed and verified on a Mac (macOS, Claude Code 2.1.263, codex-cli 0.153.4) *and* independently on a Windows machine (Windows 10 19045, Git Bash, Claude Code 2.1.260, codex-cli 0.153.4, Node v24.16.0) — including both message directions on both platforms.
+
+> **Important, up front:** this uses **internal, undocumented plumbing** inside Claude Code and Codex. It is not an official feature of either product and can break with any update to either tool. Claude will run a preflight check first and tell you honestly if your machine can't do it.
+
+**This must be pasted into Claude Code (the terminal CLI), not claude.ai.** The web chat has no access to your machine's sockets or filesystem. If you paste it into a web chat, Claude should say so and stop.
+
+---
+
+## Instructions for Claude — everything below this line is for you, Claude
+
+You are helping a user connect **you** (Claude Code, on their machine) to a **Codex** session on that same machine, in both directions. The user may or may not be technical. Verify every step visually and be scrupulously honest about verified vs. unknown.
+
+**A standing rule for this whole recipe: never state a security property you have not observed on this machine.** An earlier version of this document made three security claims from inference — all three turned out wrong, and all three were wrong in the direction that makes a reader relax. Read a value, print it, then describe it.
+
+### Step 0 — Environment check
+
+Check your own tool list.
+
+- If you have **`Bash` + `Read` + `Write`/`Edit` and real filesystem access** → you are Claude Code on the user's machine. Continue.
+- If you are in **claude.ai web chat, cowork, or any hosted sandbox** → **stop.** Say:
+
+> *"This recipe only works in Claude Code — the CLI that runs in your terminal on your own computer. I'm running in a web sandbox right now, so I can't reach your machine's sockets or files. Install Claude Code, run `claude` in your terminal, and paste this recipe there instead."*
+
+Then detect the platform and **keep going either way**:
+
+```bash
+uname -s 2>/dev/null || echo "Windows"
+```
+
+**Do not stop on Windows.** An earlier version of this recipe did, and it was wrong — the whole thing works there. The transport differs (named pipe instead of Unix socket) and some tooling differs, both handled below. Only the **preflight in Step 2** decides whether this machine qualifies.
+
+### Step 1 — Pick the language
+
+Ask the user their preferred language with `AskUserQuestion`. Offer at least **English** and **العربية (Arabic)**. Conduct the rest of the session in whichever they pick. Keep commands, paths, and JSON field names in English; only the prose switches.
+
+Then set expectations in one short paragraph:
+
+> *"Here's the plan: first I check whether your machine has the pieces this needs — that's the step that decides whether this works at all. If it passes, I set up two one-way channels: one that lets me send messages to Codex, and one that teaches Codex how to send messages back to me. Then we test both."*
+
+---
+
+### Step 2 — PREFLIGHT. This is the gate.
+
+The receiving half of this bridge is infrastructure **Claude Code runs on its own** — neither you nor Codex can create it. If it isn't present, the recipe is *inapplicable*, not broken.
+
+**Use your own `Bash` and `Read` tools for these checks. Do not require python3 — it does not exist on a default Windows install, and a preflight that can't run is worse than no preflight.**
+
+**(a) Does the session registry exist?**
+
+```bash
+ls -la ~/.claude/sessions/ 2>/dev/null | head -20
+```
+
+Expect one `<pid>.json` per live session, plus `<pid>.<64 hex>.key` files. Then **`Read` one of the `.json` files directly** and confirm it contains a `messagingSocketPath` field.
+
+What that field looks like tells you the transport:
+
+| Platform | `messagingSocketPath` value |
+|---|---|
+| macOS / Linux | `/tmp/cc-socks/<pid>.sock` (a real file on disk) |
+| Windows | `\\.\pipe\LOCAL\cc-msg-<32 hex>` (a named pipe) |
+
+**Do not check for `/tmp/cc-socks/` on Windows.** It won't exist and shouldn't — that check is a false negative that makes Windows readers quit at step one.
+
+- **At least one session file with a `messagingSocketPath`** → the receiver half exists. Continue.
+- **Directory missing/empty, or no `messagingSocketPath`** → **STOP:**
+
+> *"Your Claude Code doesn't expose the messaging socket this recipe needs. That's the piece I can't create — it has to come from Claude Code itself. Most likely a version difference. Try updating Claude Code and re-running this; if it still shows nothing, this recipe can't work on your setup and there's no workaround I can honestly offer."*
+
+Do not fabricate the socket or patch Claude Code. Stop cleanly.
+
+**(b) Is there a matching auth token file?**
+
+```bash
+ls -la ~/.claude/sessions/ | grep -i '\.key$' | head
+```
+
+Expect `<pid>.<64 hex>.key`, each containing JSON with a `peerToken` (32 hex chars). None → same stop as above.
+
+**Note the permissions you actually see** — you'll need them in Step 7, and they differ by platform. Do not assume.
+
+**(c) What tooling does this machine actually have?**
+
+Probe all of it in one plain-shell line, before you use any of it:
+
+```bash
+command -v node python3 sqlite3 codex
+```
+
+> **A runtime detector cannot be written in a runtime it is detecting.** Do not probe with a `python3` heredoc — on Windows `python3` is a Microsoft Store alias stub, so the step meant to tell the user what they have becomes the step that fails. Plain shell first; everything richer happens only after you know what you're allowed to use.
+
+Read the result and branch:
+
+- **`node` present** → use it for everything below. `net.connect()` accepts a Unix socket path *and* a Windows named pipe path through the identical API, so one client covers both platforms and the transport branch disappears.
+- **`node` missing, `python3` present** (possible on a clean Mac) → a Python client works on macOS/Linux only. **Windows cannot use it at all** — CPython has no `socket.AF_UNIX` there.
+- **Neither** → stop; there is no client runtime.
+- **`sqlite3` missing** (normal on Windows) → use the Node fallback in Step 4.
+
+**Do not assume Node is present just because Claude Code is.** Verified: on macOS, Claude Code is a standalone binary that bundles no Node at all, and `ClaudeCode.app` contains no `node` anywhere.
+
+**(d) Is Codex installed and does it have `queue`?**
+
+```bash
+codex --version && codex queue --help 2>&1 | head -5
+```
+
+If `codex: command not found`, **do not tell the user to reinstall** — on the Windows desktop install it simply isn't on PATH. Look for it:
+
+```bash
+ls "$LOCALAPPDATA/OpenAI/Codex/bin"/*/codex.exe 2>/dev/null
+```
+
+The `<hash>` directory segment varies, so glob it. Verified working when invoked by full path. If you find it, use that full path everywhere below and tell the user what you found. Only if the glob is empty is Codex genuinely absent.
+
+If `codex queue` isn't recognised, the CLI is too old — say so, since without it you can only reach *dormant* threads (Step 4), which is a much worse experience.
+
+**(e) Is there at least one Codex thread?**
+
+```bash
+ls ~/.codex/state_*.sqlite 2>/dev/null
+```
+
+If `~/.codex` doesn't exist, the user has never run Codex. Have them open a second terminal, run `codex`, type `hello`, and leave it open.
+
+**Report the preflight as a checklist with real ✅/❌ per line.** Continue only if (a), (b), (c) and (d) pass.
+
+---
+
+### Step 3 — The shape of what you're building
+
+There is **no single bridge and no handshake protocol**. Two independent one-way transports:
+
+| Direction | Mechanism |
+|---|---|
+| **You → Codex** | The `codex` CLI (`codex queue` for live threads, `codex exec resume` for dormant) |
+| **Codex → You** | A socket/pipe connection to your `messagingSocketPath`, writing two JSON lines |
+
+The halves know nothing about each other. There is **no capability negotiation** — Codex learns to reply because you *send it complete instructions in plain language* and it writes the code itself. Your bootstrap message must be **fully self-contained**: the receiving agent has zero context and no way to ask a clarifying question mid-flight.
+
+---
+
+### Step 4 — Direction 1: you → Codex
+
+**Discover the threads.** The DB filename carries a *schema version* — **always glob, never hardcode `state_5.sqlite`**.
+
+If `sqlite3` exists (typical on macOS, **absent on Windows**):
+
+```bash
+DB=$(ls -t ~/.codex/state_*.sqlite | head -1)
+sqlite3 -readonly "$DB" \
+  "SELECT id, COALESCE(NULLIF(name,''), NULLIF(title,''), id), cwd, tokens_used
+   FROM threads WHERE archived=0
+   ORDER BY COALESCE(recency_at,updated_at) DESC LIMIT 20;"
+```
+
+If `sqlite3` is missing, use Node's built-in SQLite (Node 22.5+; flagless on 24, prints a harmless `ExperimentalWarning` on 22). Write `list-codex-threads.js`:
+
+```js
+#!/usr/bin/env node
+'use strict';
+const fs = require('fs'), os = require('os'), path = require('path');
+const { DatabaseSync } = require('node:sqlite');
+const CODEX = path.join(os.homedir(), '.codex');
+
+const hits = fs.readdirSync(CODEX)
+  .filter(f => /^state_\d+\.sqlite$/.test(f))
+  .map(f => ({ f, m: fs.statSync(path.join(CODEX, f)).mtimeMs }))
+  .sort((a, b) => b.m - a.m);
+if (!hits.length) { console.error('no state_*.sqlite - has Codex ever run?'); process.exit(1); }
+
+const db = new DatabaseSync(path.join(CODEX, hits[0].f), { readOnly: true });
+const rows = db.prepare(`
+  SELECT id,
+         COALESCE(NULLIF(name,''), NULLIF(title,''), id) AS label,
+         cwd, tokens_used,
+         datetime(COALESCE(recency_at, updated_at),'unixepoch','localtime') AS last_active
+  FROM threads WHERE archived = 0
+  ORDER BY COALESCE(recency_at, updated_at) DESC LIMIT 20
+`).all();
+
+const locks = path.join(CODEX, 'thread-writer-locks');
+for (const r of rows) {
+  const open = fs.existsSync(path.join(locks, `${r.id}.lock`));
+  console.log(`${r.id}\n  ${r.label}\n  cwd=${r.cwd} tokens=${r.tokens_used} last=${r.last_active}`);
+  console.log(`  ${open ? 'OPEN NOW -> codex queue' : 'dormant -> codex exec resume'}`);
+}
+```
+
+> **The label fallback must end at `id`.** A thread with **both** `name` and `title` empty otherwise yields NULL and renders as a blank, unpickable menu option. Measured: 1 such thread on one machine, **4** on another. This is the common path, not an edge case.
+
+Show the list and let the user pick with `AskUserQuestion`, labelling each option with the thread name **and its working directory** — names alone are often ambiguous.
+
+**Check whether the thread is currently open:**
+
+```bash
+ls ~/.codex/thread-writer-locks/<thread-id>.lock 2>/dev/null
+```
+
+> **Orphan locks exist.** Verified on **both** platforms: lock files whose thread id has *zero* rows in the database. Never assume a lock implies a live, lookup-able thread — tolerate a lock with no matching row instead of erroring.
+
+**If the lock EXISTS (thread is live) — use `queue`. This is the good path:**
+
+```bash
+codex queue --thread <thread-id-or-exact-name> --message "your text here"
+```
+
+Returns instantly with `Queued message <id> for thread <id>.` It never tries to become the thread's writer, so the lock is irrelevant. Delivery is asynchronous — the client picks it up at its next turn. Verified on both platforms, including into a very large actively-used thread; it landed within seconds.
+
+**If there is NO lock (dormant) — use `exec resume`:**
+
+```bash
+codex exec --sandbox read-only resume --skip-git-repo-check <thread-id> "your text here"
+```
+
+Two flag gotchas, and the *reason* matters so you can reason about future flags: `-s/--sandbox` is an option of **`exec`**, while `--skip-git-repo-check` is an option of **`resume`**. So `--sandbox` must come **before** the subcommand or you get `unexpected argument '--sandbox'`; and `--skip-git-repo-check` is required whenever the current directory isn't a git repo, else `Not inside a trusted directory`.
+
+> **⚠️ Tell the user about the cost.** `resume` **replays the entire thread history on every call.** Measured: ~124,000 tokens for a one-line ping into a small thread, ~248,000 into a medium one, ~641,000 into a large one. **Cost scales with the target thread's size, not your message.** `codex queue` has no such cost. So: **queue for anything live, resume only for dormant threads, and never loop either as a chat channel.**
+
+**Do not fight the writer lock.** `exec resume` on a live thread gives `thread-store conflict: thread <id> already has an active writer (code -32600)`. That lock is an OS `flock()` held by the *shared* `codex app-server` daemon, not the client — killing the Codex client does **not** release it (verified: still locked 10+ minutes after the process was gone). **Never restart the app-server daemon to "fix" it** — it's shared by every Codex client on the machine. Just use `queue`.
+
+Send a test message and confirm with the user that they saw it arrive.
+
+---
+
+### Step 5 — Direction 2: Codex → you
+
+Write the client yourself and hand it over — don't make Codex reinvent it, it will re-hit the traps below. **One file works on both platforms**, because `net.connect()` takes a Unix socket path and a Windows named pipe path through the same API. Save as `send-claude-message.js`:
+
+```js
+#!/usr/bin/env node
+'use strict';
+const net = require('net'), fs = require('fs'), os = require('os'), path = require('path');
+const SESSIONS = path.join(os.homedir(), '.claude', 'sessions');
+
+function discover() {
+  let files;
+  try { files = fs.readdirSync(SESSIONS); }
+  catch (e) { console.error(`cannot read ${SESSIONS}: ${e.message}`); process.exit(1); }
+  const out = [];
+  for (const f of files) {
+    if (!f.endsWith('.json')) continue;
+    let d;
+    try { d = JSON.parse(fs.readFileSync(path.join(SESSIONS, f), 'utf8')); }
+    catch { continue; }
+    if (!d.messagingSocketPath) continue;
+    // Measured TRUE for a live named pipe on Win10/Node 24 and for unix
+    // sockets on macOS, so this filter is safe on both. NEVER probe the pid
+    // with kill(0): a sandboxed caller is denied that syscall and every
+    // session silently vanishes, which looks identical to "found 0".
+    if (!fs.existsSync(d.messagingSocketPath)) continue;
+    out.push({ name: d.name, pid: d.pid, sock: d.messagingSocketPath });
+  }
+  return out;
+}
+
+function tokenFor(pid) {
+  const hit = fs.readdirSync(SESSIONS).find(f => f.startsWith(`${pid}.`) && f.endsWith('.key'));
+  if (!hit) { console.error(`no key file for pid ${pid}`); process.exit(1); }
+  const tok = JSON.parse(fs.readFileSync(path.join(SESSIONS, hit), 'utf8')).peerToken;
+  if (!/^[0-9a-f]{32}$/i.test(tok || '')) { console.error('bad peerToken format'); process.exit(1); }
+  return tok;
+}
+
+function send(name, text) {
+  const matches = discover().filter(s => s.name === name);
+  if (matches.length !== 1) {
+    console.error(`Expected exactly one live Claude session named ${JSON.stringify(name)}; `
+      + `found ${matches.length}`
+      + (matches.length ? `: pids ${matches.map(m => m.pid).join(', ')}` : ''));
+    process.exit(1);
+  }
+  const s = matches[0];
+  // Build the payload BEFORE connecting - a connection that doesn't send a
+  // complete line quickly gets closed.
+  const payload =
+    JSON.stringify({ type: 'auth', token: tokenFor(s.pid) }) + '\n' +
+    JSON.stringify({ type: 'user', message: { role: 'user', content: text } }) + '\n';
+  const conn = net.connect(s.sock);
+  let got = '';
+  conn.on('connect', () => { conn.write(payload); setTimeout(() => conn.end(), 1500); });
+  conn.on('data', d => { got += d.toString(); });
+  conn.on('error', e => {
+    console.error(`FAILED at ${e.syscall || 'connect'}: ${e.code || ''} ${e.message}`);
+    process.exit(1);
+  });
+  conn.on('close', () => {
+    if (got.trim()) console.log('reply:', got.trim());
+    console.log(`sent to "${s.name}" (pid ${s.pid})`);
+  });
+}
+
+const [, , cmd, a, b] = process.argv;
+if (cmd === 'list') {
+  const rows = discover();
+  console.log(`${rows.length} live session(s):`);
+  for (const s of rows) console.log(`  ${JSON.stringify(s.name)} pid=${s.pid}\n    ${s.sock}`);
+} else if (cmd === 'send' && a && b) { send(a, b); }
+else { console.error('usage: node send-claude-message.js list | send "<name>" "<text>"'); process.exit(1); }
+```
+
+**The wire protocol it implements** (for your understanding): read `messagingSocketPath` and the matching `peerToken`, connect, then write exactly two newline-terminated JSON frames:
+
+```json
+{"type": "auth", "token": "<peerToken>"}
+{"type": "user", "message": {"role": "user", "content": "your text"}}
+```
+
+**Then send Codex the briefing** via `codex queue`. Fill in the real values — **never paste example names, PIDs or paths from this recipe; resolve them on this machine**:
+
+> *I'm a Claude Code session named `<YOUR ACTUAL SESSION NAME>` on this machine, and I'd like you to message me back.*
+>
+> *A working client is at `<ABSOLUTE PATH>/send-claude-message.js`. List sessions: `node <PATH> list`. Send to me: `node <PATH> send '<YOUR ACTUAL SESSION NAME>' 'your text'`.*
+>
+> *On macOS, connecting to the socket is outside your sandbox — run it with `sandbox_permissions: "require_escalated"` on your `exec_command` tool, with a clear justification. Without it the connect fails with `PermissionError: [Errno 1] Operation not permitted` before any data is sent.*
+>
+> *Please send me a short test message now. If it fails, write what went wrong to `/tmp/codex-bridge-error.txt` (or `%TEMP%\codex-bridge-error.txt`) instead — that's your fallback channel.*
+
+**That last sentence is not optional.** The only reply channel is the very thing being tested, so a first-attempt failure is otherwise completely silent. Always give the remote agent a **file-based fallback**.
+
+---
+
+### Step 6 — Known failure modes
+
+1. **Claude Code's own permission classifier blocks the commands.** Verified on both machines: it refused the pipe client and refused `codex queue`. This is not a sandbox, OS, or dependency problem — it's the agent's own permission layer, and it looks exactly like the bridge being broken when it works perfectly.
+
+   **The user telling you to proceed does not lift it.** Observed: it blocked again immediately after the user typed an explicit instruction to continue. Chat consent is not the layer the classifier listens to, so do not keep asking the user to confirm and re-running — that wastes their time and yours.
+
+   **Remedy: the user runs the command themselves in their terminal, or adds an explicit permission rule first.** Do **not** tell them to retry — retries succeeded on one machine and failed identically twice on the other, so retry advice cannot be relied on.
+2. **`PermissionError: [Errno 1] Operation not permitted` on `connect()` (macOS).** Codex's sandbox blocked the connection. It fires *before* any auth frame, so it is **not** an auth problem, not `ECONNREFUSED`, not a missing key. Fix: retry with escalated sandbox permissions on that exec call.
+3. **Codex reports "found 0 sessions" when sessions clearly exist.** Its script is probing liveness with `os.kill(pid, 0)`, which its sandbox denies — everything gets filtered out. Looks like a discovery bug, isn't. The client above avoids it.
+4. **`thread-store conflict … already has an active writer`.** You used `exec resume` on a live thread. Use `queue`.
+5. **Orphan lock files.** A `.lock` whose thread id isn't in the DB. Verified on both platforms. Tolerate it.
+6. **Name collisions.** Claude session names and Codex thread names are **separate namespaces and collide freely** — the same name can refer to one Claude session and two different Codex threads at once. Some setups also bulk-import Claude transcripts into Codex, making duplicates the norm. **Both sides must refuse ambiguous matches.** Disambiguate by pid (Claude) or thread id (Codex).
+7. **Don't filter targets on `status`.** A "busy" session is valid — it processes at its next tool round.
+8. **`sqlite3` is absent on Windows.** Use the Node fallback in Step 4.
+9. **`python3` is absent on Windows** (only a Microsoft Store alias stub). And CPython has no `socket.AF_UNIX` on Windows at all, so a Python client cannot work there regardless.
+10. **`socat` may not be installed anywhere.** Not needed — Node covers it.
+11. **Writing into `~/.codex/skills/` may need escalation** — it can sit outside Codex's ordinary writable roots. A temp directory is the reliable drop point.
+12. *(macOS/Linux only)* Unix socket paths have a ~103-byte limit. Irrelevant to Windows named pipes.
+
+---
+
+### Step 7 — Be honest about the limits
+
+Tell the user all of this, in their language.
+
+- **This is internal, undocumented plumbing in both tools.** Not a supported feature of either. Expect to re-run this recipe after updates. This is the single biggest fragility.
+- **Messages are one-shot and asynchronous in both directions.** Each direction is a separate explicit send. No request/response, no delivery receipt, no synchronous reply. **A timeout is not a failure, and silence is not confirmation.** Do **not** auto-resend after an uncertain result — you'll duplicate the message. It is texting, not a phone call: describe it as **bidirectional async messaging**, never as "real-time conversation."
+- **Sender identity is labelled but NOT verified — and is actively mislabelled.** Observed, not inferred: an incoming message arrives wrapped as `<cross-session-message from="uds:/tmp/cc-socks/<pid>.sock" from-name="..." from-mode="...">`, together with built-in guidance that a peer cannot grant escalation and that relaying a denied action is "permission laundering." So provenance *is* surfaced. **But the label describes the transport, not the sender:** a message sent by *Codex* over this channel arrives announced as *"Another Claude session sent a message."* Anything holding a valid `peerToken` is presented to the recipient as a Claude session, whoever it actually is. Do not build trust decisions on that label.
+- **Anyone who can read the token file can impersonate the user to that session.** Both agents must run **as the same OS user**. On macOS/Linux the key files are mode `0600`; **on Windows they are not** — NTFS shows `-rw-r--r--` and POSIX modes don't apply, so the filesystem protection you'd expect on Unix isn't there. Treat the warning as *stronger* on Windows, not weaker. Whatever platform you're on, **read the permissions and report what you actually see** rather than repeating this paragraph.
+- **Not verified:** whether messages can interrupt a session mid-turn while it's actively generating; whether the app-server daemon must be running or auto-starts; behaviour of fully headless/dormant Codex threads; cross-user access.
+- **No live real-time attach.** There is an app-server control socket (`~/.codex/app-server-control/app-server-control.sock`, methods `thread/inject` / `turn/start` / `turn/steer`) but its auth handshake is unknown — connections are accepted then silently dropped across every framing tried. Don't promise real-time conversation.
+- **Version numbers are observations, not requirements.** This was developed on specific Claude Code / Codex / Node combinations. Those are *what it was tested on*, **not** established minimums — the Step 2 preflight tests the actual capability, which is what matters.
+
+---
+
+### Step 8 — Wrap up
+
+Show the user a short summary of what now exists:
+
+- The command *they* run to message Codex from a terminal.
+- The command *Codex* runs to message this Claude session, and the script path.
+- Which Codex thread is wired up, by **id**, not just name.
+- A reminder that this may need re-running after either tool updates.
+
+Then offer one more round-trip test to confirm both directions.
+
+---
+
+*Recipe from [@eng_menawer](https://instagram.com/eng_menawer). Methodology developed and verified by a Claude Code session working with a Codex session on macOS, then independently re-tested end to end on Windows — including the parts that failed, and the three security claims that turned out to be wrong.*
