@@ -35,6 +35,29 @@ uname -s 2>/dev/null || echo "Windows"
 
 **Do not stop on Windows.** An earlier version of this recipe did, and it was wrong — the whole thing works there. The transport differs (named pipe instead of Unix socket) and some tooling differs, both handled below. Only the **preflight in Step 2** decides whether this machine qualifies.
 
+### Step 0.5 — Auto mode will probably interrupt this. Say so NOW, before it happens.
+
+**This is the single most common way readers get stuck, and it looks exactly like the bridge being broken.**
+
+If this session is in **auto mode**, its own permission classifier will likely refuse some commands in this recipe. That refusal is not a sandbox error, not a missing dependency, and not a bug in the bridge. It is this session's permission layer declining to run something on the user's behalf.
+
+**Tell the user this up front, in one sentence, before you run anything:**
+
+> *"Before we start: if I'm in auto mode, my own permission system may refuse some of these commands. That's not the bridge failing — I'll tell you plainly when it happens and hand you the command to run yourself. Switching this session out of auto mode now will avoid most of it."*
+
+Then recommend they switch to a prompting/default permission mode for the duration. Measured across two machines: in a non-auto mode the same commands prompt normally instead of being silently refused.
+
+**When a refusal happens — and it may — follow this order. Do not improvise.**
+
+1. **Name it immediately, at the point of failure.** Say "this was refused by my permission classifier, not by the bridge." Never let the user believe the mechanism is broken. Never report a classifier refusal as a technical failure of the recipe.
+2. **Do not silently retry, and do not reword the command to get through.** Rewording is not a diagnosis. On one machine the refused commands included two carrying *no message text at all*, and one that had **succeeded minutes earlier in the same session** — there was nothing to reword. Trying to slip past a permission decision is the wrong instinct even when it works.
+3. **Hand the user the exact command to run in their own terminal.** Paste-ready, with real values already filled in, no placeholders. This is the immediate way out and it always works.
+4. **A later session is a genuinely different context, not a workaround.** If the step is still needed then, run it once and report the result honestly either way.
+
+Refusals are **transient and not a property of the machine**: on the same machine, commands refused six times in one session passed on the first attempt in a new session with no settings change, no new permission rule and no rewording. That is a measurement, not an explanation — do not offer the user a mechanism for it, because nobody has established one.
+
+**One thing that does NOT help: the user telling you to proceed.** Measured three separate times, including a user typing an explicit written instruction to continue. Chat consent is not the layer the classifier listens to. Do not ask the user to confirm and then re-run the same command — that wastes their time and yours. Go to step 3.
+
 ### Step 1 — Pick the language
 
 Ask the user their preferred language with `AskUserQuestion`. Offer at least **English** and **العربية (Arabic)**. Conduct the rest of the session in whichever they pick. Keep commands, paths, and JSON field names in English; only the prose switches.
@@ -321,6 +344,22 @@ node <PATH>/send-claude-message.js send "<YOUR OWN SESSION NAME>" "self-test"
 
 It should arrive in this conversation within about a second. This proves the socket path, the token, the frame format and the client are all correct **independently of Codex's sandbox** — so if the Codex attempt fails afterwards, you already know the failure is on Codex's side and not in the plumbing. Skipping this makes every later error ambiguous. Do not skip it.
 
+> **If THIS step is refused, it is auto mode — not the bridge.** This is the most likely place in the whole recipe to hit the permission classifier, and it is marked unskippable, so a reader will stall here. Apply the order from Step 0.5 immediately: name it as a classifier refusal, do **not** reword it, and hand the user this exact command for their own terminal with the real path and name already filled in:
+>
+> ```bash
+> node <PATH>/send-claude-message.js send "<ACTUAL NAME>" "self-test"
+> ```
+>
+> Verified: a refusal here says nothing about whether the bridge works. On the machine where it was refused, the identical command succeeded in a later session untouched.
+
+**Both placeholders above must be real before you show this to anyone.** `<PATH>` is wherever you actually saved the client, and `<ACTUAL NAME>` is this session's current name — derive it now rather than reusing anything written earlier:
+
+```bash
+cat ~/.claude/sessions/$CLAUDE_PID.json
+```
+
+`CLAUDE_PID` is this session's own PID, already in your environment; that file carries the matching `name`. **Session names change between sessions** — one machine's name went from `desktop-41` to `desktop-cd` overnight — so a command containing a name has a shelf life of hours. Re-derive it at the moment of sending, every time, and never hand the user a command with a placeholder still in it.
+
 **The wire protocol it implements** (for your understanding): read `messagingSocketPath` and the matching `peerToken`, connect, then write exactly two newline-terminated JSON frames:
 
 ```json
@@ -368,11 +407,13 @@ Present Full access to the user as **one tested configuration, not a rule** — 
 
    **The user telling you to proceed does not lift it.** Observed: it blocked again immediately after the user typed an explicit instruction to continue. Chat consent is not the layer the classifier listens to, so do not keep asking the user to confirm and re-running — that wastes their time and yours.
 
-   **It also reads the CONTENT of what you queue, not just the command.** Verified: a `codex queue` call was refused because the *message text* told Codex to run something "non-sandboxed" — rewording the message got the identical command through. So if a queue call is blocked, try rephrasing the payload before assuming the command itself is the problem.
+   **Follow the order in Step 0.5 — it is the remedy for this entry.** Name it as a classifier refusal at the point of failure, do not silently retry, do not reword to get through, hand the user the paste-ready command for their own terminal, and treat a later session as a different context rather than a workaround.
 
-   **It can block fetching this recipe page too.** On one machine in auto mode the in-app browser, `curl` and Chrome navigation were all denied, so the reader could not even load the page to copy it. If that happens: paste the recipe text in directly, and switch the session out of auto mode — everything then prompts normally instead of being silently refused.
+   **Content is an input, not the input — do not treat rewording as the fix.** One machine saw a `codex queue` refused over the words "non-sandboxed" in the *message text*, and rewording got the identical command through. Another machine saw six refusals in a single session where two carried **no message text at all**, two carried the most neutral text the operator could write, and one was a command that had **succeeded minutes earlier in that same session**. Both results are real and neither generalises. So rephrasing is worth at most one attempt, and it must never stand in front of "hand it to the user" as the first move.
 
-   **Remedy: the user runs the command themselves in their terminal, switches out of auto mode, or adds an explicit permission rule first.** Do **not** tell them to retry — retries succeeded on one machine and failed identically twice on another, so retry advice cannot be relied on.
+   **It can block fetching this recipe page too.** On one machine in auto mode the in-app browser, `curl` and Chrome navigation were all denied, so the reader could not even load the page to copy it. If that happens: have them paste the recipe text in directly, and switch the session out of auto mode.
+
+   **Do not tell the user to retry.** Retries succeeded on one machine and failed identically twice on another. A *new session* is a different matter and often does pass — but that is an observation, not a mechanism, and it is step 4, not step 1.
 2. **`PermissionError: [Errno 1] Operation not permitted` on `connect()` (macOS).** Codex's sandbox blocked the connection. It fires *before* any auth frame, so it is **not** an auth problem, not `ECONNREFUSED`, not a missing key. Fix: retry with escalated sandbox permissions on that exec call.
 3. **Codex reports "found 0 sessions" when sessions clearly exist.** Its script is probing liveness with `os.kill(pid, 0)`, which its sandbox denies — everything gets filtered out. Looks like a discovery bug, isn't. The client above avoids it.
 4. **`thread-store conflict … already has an active writer`.** You used `exec resume` on a live thread. Use `queue`.
